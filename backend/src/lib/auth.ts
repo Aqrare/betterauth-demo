@@ -3,13 +3,14 @@ import { Pool } from "pg"
 import dotenv from "dotenv"
 import { sendVerificationEmail, sendPasswordResetEmail } from "./email.js"
 import { twoFactor } from "better-auth/plugins";
+import { passkey } from "@better-auth/passkey";
 
 // 環境変数を確実に読み込む
 dotenv.config()
 
 export const auth = betterAuth({
   appName: "Auth Demo App",
-  plugins: [twoFactor()],
+  plugins: [twoFactor(), passkey()],
 
   // データベース接続設定
   database: new Pool({

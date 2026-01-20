@@ -64,11 +64,44 @@ export default function Login() {
 		});
 	};
 
+	const handlePasskeyLogin = async () => {
+		setError("");
+		setLoading(true);
+
+		try {
+			const result = await authClient.signIn.passkey();
+
+			if (result.error) {
+				setError(result.error.message || "パスキーでのログインに失敗しました");
+				setLoading(false);
+				return;
+			}
+
+			navigate("/dashboard");
+		} catch (err) {
+			console.error("Passkey login error:", err);
+			setError("パスキーログイン中にエラーが発生しました");
+			setLoading(false);
+		}
+	};
+
 	return (
 		<AuthCard title="Login">
 			<ErrorMessage message={error} />
 
 			<GoogleButton onClick={handleGoogleLogin} />
+
+			<button
+				type="button"
+				onClick={handlePasskeyLogin}
+				disabled={loading}
+				className="w-full bg-white/60 backdrop-blur-sm text-cyan-900 py-3 px-4 rounded-xl border border-cyan-200 hover:bg-white/70 transition-all duration-300 font-medium flex items-center justify-center gap-3 mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+			>
+				<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+				</svg>
+				Sign in with Passkey
+			</button>
 
 			<Divider text="Or continue with email" />
 

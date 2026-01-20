@@ -1,7 +1,7 @@
 import Layout from "../components/Layout";
 import { Section, InputField, Button, ErrorMessage, SuccessMessage } from "../components/FormComponents";
 import { authClient } from "../lib/auth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import QRCode from "react-qr-code";
 
 export default function Settings() {
@@ -28,6 +28,36 @@ export default function Settings() {
 	const [twoFactorSuccess, setTwoFactorSuccess] = useState("");
 	const [twoFactorLoading, setTwoFactorLoading] = useState(false);
 	const [backupCodesCopied, setBackupCodesCopied] = useState(false);
+
+	// Passkey関連の状態
+	const [showAddPasskeyForm, setShowAddPasskeyForm] = useState(false);
+	const [passkeyName, setPasskeyName] = useState("");
+	const [passkeyError, setPasskeyError] = useState("");
+	const [passkeySuccess, setPasskeySuccess] = useState("");
+	const [passkeyLoading, setPasskeyLoading] = useState(false);
+	const [passkeys, setPasskeys] = useState<any[]>([]);
+	const [passkeyListLoading, setPasskeyListLoading] = useState(false);
+	const [editingPasskeyId, setEditingPasskeyId] = useState<string | null>(null);
+	const [editingPasskeyName, setEditingPasskeyName] = useState("");
+
+	// パスキー一覧を取得
+	const fetchPasskeys = async () => {
+		setPasskeyListLoading(true);
+		try {
+			const { data, error } = await authClient.passkey.listUserPasskeys();
+			if (data) {
+				setPasskeys(data);
+			}
+		} catch (error) {
+			console.error("Failed to fetch passkeys:", error);
+		} finally {
+			setPasskeyListLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		fetchPasskeys();
+	}, []);
 
 	const handlePasswordChange = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -204,6 +234,93 @@ export default function Settings() {
 			setTwoFactorError("2FAの無効化中にエラーが発生しました");
 		} finally {
 			setTwoFactorLoading(false);
+		}
+	};
+
+	// パスキー名を更新
+	const handleUpdatePasskey = async (passkeyId: string) => {
+		if (!editingPasskeyName.trim()) {
+			setPasskeyError("パスキー名を入力してください");
+			return;
+		}
+
+		setPasskeyError("");
+		setPasskeyLoading(true);
+
+		try {
+			const { error } = await authClient.passkey.updatePasskey({
+				id: passkeyId,
+				name: editingPasskeyName,
+			});
+
+			if (error) {
+				setPasskeyError(error.message || "パスキー名の更新に失敗しました");
+			} else {
+				setPasskeySuccess("パスキー名を更新しました");
+				setEditingPasskeyId(null);
+				setEditingPasskeyName("");
+				await fetchPasskeys(); // パスキー一覧を再取得
+				setTimeout(() => setPasskeySuccess(""), 5000);
+			}
+		} catch (error) {
+			setPasskeyError("パスキー名の更新中にエラーが発生しました");
+		} finally {
+			setPasskeyLoading(false);
+		}
+	};
+
+	// パスキーを削除
+	const handleDeletePasskey = async (passkeyId: string) => {
+		if (!confirm("このパスキーを削除してもよろしいですか？")) {
+			return;
+		}
+
+		setPasskeyError("");
+		setPasskeyLoading(true);
+
+		try {
+			const { error } = await authClient.passkey.deletePasskey({
+				id: passkeyId,
+			});
+
+			if (error) {
+				setPasskeyError(error.message || "パスキーの削除に失敗しました");
+			} else {
+				setPasskeySuccess("パスキーを削除しました");
+				await fetchPasskeys(); // パスキー一覧を再取得
+				setTimeout(() => setPasskeySuccess(""), 5000);
+			}
+		} catch (error) {
+			setPasskeyError("パスキーの削除中にエラーが発生しました");
+		} finally {
+			setPasskeyLoading(false);
+		}
+	};
+
+	// パスキーを追加
+	const handleAddPasskey = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setPasskeyError("");
+		setPasskeyLoading(true);
+
+		try {
+			const { error } = await authClient.passkey.addPasskey({
+				name: passkeyName || undefined,
+			});
+
+			if (error) {
+				setPasskeyError(error.message || "パスキーの登録に失敗しました");
+			} else {
+				setPasskeySuccess("パスキーを登録しました");
+				setShowAddPasskeyForm(false);
+				setPasskeyName("");
+				await fetchPasskeys(); // パスキー一覧を再取得
+				setTimeout(() => setPasskeySuccess(""), 5000);
+			}
+		} catch (error) {
+			setPasskeyError("パスキーの登録中にエラーが発生しました");
+		} finally {
+			setPasskeyLoading(false);
 		}
 	};
 
@@ -540,6 +657,150 @@ export default function Settings() {
                   </div>
                 )}
               </div>
+            )}
+          </div>
+        </Section>
+
+        {/* Passkey Section */}
+        <Section title="Passkey">
+          <div className="space-y-4">
+            {passkeyError && <ErrorMessage message={passkeyError} />}
+            {passkeySuccess && <SuccessMessage>{passkeySuccess}</SuccessMessage>}
+
+            <div className="p-4 bg-white/30 rounded-xl">
+              <div className="mb-4">
+                <p className="text-sm text-cyan-900 mb-2">
+                  パスキーは、パスワードの代わりに使用できる安全な認証方法です。
+                  生体認証やPIN、セキュリティキーを使用してログインできます。
+                </p>
+              </div>
+
+              {!showAddPasskeyForm ? (
+                <Button onClick={() => setShowAddPasskeyForm(true)}>
+                  パスキーを追加
+                </Button>
+              ) : (
+                <form onSubmit={handleAddPasskey} className="space-y-4">
+                  <InputField
+                    label="パスキー名（オプション）"
+                    type="text"
+                    value={passkeyName}
+                    onChange={setPasskeyName}
+                    placeholder="例: MacBook Pro, iPhone"
+                  />
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={passkeyLoading}>
+                      {passkeyLoading ? "登録中..." : "パスキーを登録"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        setShowAddPasskeyForm(false);
+                        setPasskeyName("");
+                        setPasskeyError("");
+                      }}
+                    >
+                      キャンセル
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {/* 登録済みパスキー一覧 */}
+            {passkeyListLoading ? (
+              <div className="p-4 bg-white/30 rounded-xl text-center text-cyan-800">
+                読み込み中...
+              </div>
+            ) : passkeys.length > 0 ? (
+              <div className="p-4 bg-white/30 rounded-xl">
+                <p className="font-medium text-cyan-900 mb-3">登録済みパスキー</p>
+                <div className="space-y-2">
+                  {passkeys.map((passkey) => (
+                    <div
+                      key={passkey.id}
+                      className="p-3 bg-white/40 rounded-lg"
+                    >
+                      {editingPasskeyId === passkey.id ? (
+                        // 編集モード
+                        <div className="space-y-3">
+                          <InputField
+                            label="パスキー名"
+                            type="text"
+                            value={editingPasskeyName}
+                            onChange={setEditingPasskeyName}
+                            placeholder="例: MacBook Pro, iPhone"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handleUpdatePasskey(passkey.id)}
+                              disabled={passkeyLoading}
+                            >
+                              {passkeyLoading ? "更新中..." : "保存"}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              onClick={() => {
+                                setEditingPasskeyId(null);
+                                setEditingPasskeyName("");
+                                setPasskeyError("");
+                              }}
+                            >
+                              キャンセル
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        // 通常表示モード
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium text-cyan-900">{passkey.name || "名前なし"}</p>
+                            <p className="text-xs text-cyan-700">
+                              作成日: {new Date(passkey.createdAt).toLocaleDateString('ja-JP')}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs px-2 py-1 bg-cyan-100 text-cyan-800 rounded">
+                              {passkey.deviceType}
+                            </span>
+                            <button
+                              onClick={() => {
+                                setEditingPasskeyId(passkey.id);
+                                setEditingPasskeyName(passkey.name || "");
+                                setPasskeyError("");
+                              }}
+                              disabled={passkeyLoading}
+                              className="text-cyan-600 hover:text-cyan-800 disabled:opacity-50 disabled:cursor-not-allowed p-1"
+                              title="編集"
+                            >
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDeletePasskey(passkey.id)}
+                              disabled={passkeyLoading}
+                              className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed p-1"
+                              title="削除"
+                            >
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              !showAddPasskeyForm && (
+                <div className="p-4 bg-white/30 rounded-xl text-center text-cyan-800 text-sm">
+                  登録済みのパスキーはありません
+                </div>
+              )
             )}
           </div>
         </Section>
