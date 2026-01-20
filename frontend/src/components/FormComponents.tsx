@@ -312,6 +312,7 @@ interface InputFieldProps {
 	disabled?: boolean;
 	helperText?: string;
 	monospace?: boolean;
+	onChange?: (value: string) => void;
 }
 
 export function InputField({
@@ -321,6 +322,7 @@ export function InputField({
 	disabled = false,
 	helperText,
 	monospace = false,
+	onChange,
 }: InputFieldProps) {
 	const inputClass = disabled
 		? "w-full px-4 py-3 bg-white/30 backdrop-blur-sm border border-white/50 rounded-xl text-cyan-700 cursor-not-allowed"
@@ -333,7 +335,8 @@ export function InputField({
 			</label>
 			<input
 				type={type}
-				defaultValue={value}
+				value={value}
+				onChange={onChange ? (e) => onChange(e.target.value) : undefined}
 				disabled={disabled}
 				className={`${inputClass} ${monospace ? "font-mono text-sm" : ""}`}
 			/>
@@ -371,15 +374,17 @@ interface ButtonProps {
 	children: ReactNode;
 	variant?: "primary" | "danger";
 	onClick?: () => void;
+	type?: "button" | "submit";
+	disabled?: boolean;
 }
 
-export function Button({ children, variant = "primary", onClick }: ButtonProps) {
+export function Button({ children, variant = "primary", onClick, type = "button", disabled = false }: ButtonProps) {
 	const buttonClass = variant === "danger"
-		? "px-6 py-3 bg-red-100/60 backdrop-blur-sm text-red-700 rounded-xl border border-red-200 hover:bg-red-100/80 transition-all font-medium"
-		: "px-6 py-3 bg-cyan-100/50 backdrop-blur-sm text-cyan-900 rounded-xl border border-cyan-200/50 hover:bg-cyan-100/70 transition-all font-medium";
+		? "px-6 py-3 bg-red-100/60 backdrop-blur-sm text-red-700 rounded-xl border border-red-200 hover:bg-red-100/80 disabled:bg-red-100/40 disabled:cursor-not-allowed transition-all font-medium"
+		: "px-6 py-3 bg-cyan-100/50 backdrop-blur-sm text-cyan-900 rounded-xl border border-cyan-200/50 hover:bg-cyan-100/70 disabled:bg-cyan-100/30 disabled:cursor-not-allowed transition-all font-medium";
 
 	return (
-		<button type="button" onClick={onClick} className={buttonClass}>
+		<button type={type} onClick={onClick} disabled={disabled} className={buttonClass}>
 			{children}
 		</button>
 	);
