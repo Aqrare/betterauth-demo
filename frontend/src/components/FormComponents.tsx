@@ -313,6 +313,9 @@ interface InputFieldProps {
 	helperText?: string;
 	monospace?: boolean;
 	onChange?: (value: string) => void;
+	placeholder?: string;
+	maxLength?: number;
+	required?: boolean;
 }
 
 export function InputField({
@@ -323,6 +326,9 @@ export function InputField({
 	helperText,
 	monospace = false,
 	onChange,
+	placeholder,
+	maxLength,
+	required,
 }: InputFieldProps) {
 	const inputClass = disabled
 		? "w-full px-4 py-3 bg-white/30 backdrop-blur-sm border border-white/50 rounded-xl text-cyan-700 cursor-not-allowed"
@@ -337,6 +343,9 @@ export function InputField({
 				type={type}
 				value={value}
 				onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+				placeholder={placeholder}
+				maxLength={maxLength}
+				required={required}
 				disabled={disabled}
 				className={`${inputClass} ${monospace ? "font-mono text-sm" : ""}`}
 			/>
@@ -372,16 +381,19 @@ export function Toggle({ label, description, defaultChecked = false }: TogglePro
 // Button Component
 interface ButtonProps {
 	children: ReactNode;
-	variant?: "primary" | "danger";
+	variant?: "primary" | "secondary" | "danger";
 	onClick?: () => void;
 	type?: "button" | "submit";
 	disabled?: boolean;
 }
 
 export function Button({ children, variant = "primary", onClick, type = "button", disabled = false }: ButtonProps) {
-	const buttonClass = variant === "danger"
-		? "px-6 py-3 bg-red-100/60 backdrop-blur-sm text-red-700 rounded-xl border border-red-200 hover:bg-red-100/80 disabled:bg-red-100/40 disabled:cursor-not-allowed transition-all font-medium"
-		: "px-6 py-3 bg-cyan-100/50 backdrop-blur-sm text-cyan-900 rounded-xl border border-cyan-200/50 hover:bg-cyan-100/70 disabled:bg-cyan-100/30 disabled:cursor-not-allowed transition-all font-medium";
+	const buttonClass =
+		variant === "danger"
+			? "px-6 py-3 bg-red-100/60 backdrop-blur-sm text-red-700 rounded-xl border border-red-200 hover:bg-red-100/80 disabled:bg-red-100/40 disabled:cursor-not-allowed transition-all font-medium"
+			: variant === "secondary"
+			? "px-6 py-3 bg-white/40 backdrop-blur-sm text-cyan-800 rounded-xl border border-cyan-200/50 hover:bg-white/60 disabled:bg-white/20 disabled:cursor-not-allowed transition-all font-medium"
+			: "px-6 py-3 bg-cyan-100/50 backdrop-blur-sm text-cyan-900 rounded-xl border border-cyan-200/50 hover:bg-cyan-100/70 disabled:bg-cyan-100/30 disabled:cursor-not-allowed transition-all font-medium";
 
 	return (
 		<button type={type} onClick={onClick} disabled={disabled} className={buttonClass}>

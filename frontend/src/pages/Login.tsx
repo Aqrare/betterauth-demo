@@ -22,27 +22,39 @@ export default function Login() {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		await authClient.signIn.email(
-			{
+		setError("");
+		setLoading(true);
+
+		try {
+			const result = await authClient.signIn.email({
 				email,
 				password,
 				callbackURL: "/dashboard",
 				rememberMe,
-			},
-			{
-				onRequest: () => {
-					setError("");
-					setLoading(true);
-				},
-				onSuccess: () => {
-					navigate("/dashboard");
-				},
-				onError: (ctx) => {
-					setError(ctx.error.message);
-					setLoading(false);
-				},
-			},
-		);
+			});
+
+			console.log("Login result:", result);
+
+			if (result.error) {
+				setError(result.error.message || "ログインに失敗しました");
+				setLoading(false);
+				return;
+			}
+
+			// 2FAリダイレクトが必要かチェック
+			// @ts-ignore - twoFactorRedirect may not be in type definition
+			if (result.data?.twoFactorRedirect) {
+				console.log("2FA redirect needed");
+				navigate("/two-factor-verify");
+			} else {
+				console.log("No 2FA, going to dashboard");
+				navigate("/dashboard");
+			}
+		} catch (err) {
+			console.error("Login error:", err);
+			setError("ログイン中にエラーが発生しました");
+			setLoading(false);
+		}
 	};
 
 	const handleGoogleLogin = async () => {
