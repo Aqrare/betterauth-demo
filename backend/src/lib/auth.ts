@@ -1,9 +1,11 @@
 import { betterAuth } from "better-auth"
-import { db } from "../db/index.js"
+import { Pool } from "pg";
 
 export const auth = betterAuth({
-  // 既存のKyselyインスタンスを使用
-  database: db,
+  // データベース接続設定
+  database: new Pool({
+    connectionString: process.env.DATABASE_URL!,
+  }),
 
   // Email & Passwordプロバイダーを有効化
   emailAndPassword: {
