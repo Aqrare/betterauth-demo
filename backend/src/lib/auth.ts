@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth"
 import { Pool } from "pg"
 import dotenv from "dotenv"
-import { sendVerificationEmail } from "./email.js"
+import { sendVerificationEmail, sendPasswordResetEmail } from "./email.js"
 
 // 環境変数を確実に読み込む
 dotenv.config()
@@ -16,6 +16,17 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true, // メール認証を必須に
+    sendResetPassword: async ({ user, url, token }) => {
+      // タイミング攻撃を防ぐためawaitしない
+      void sendPasswordResetEmail({
+        to: user.email,
+        url,
+        userName: user.name,
+      })
+    },
+    onPasswordReset: async ({ user }) => {
+      console.log(`Password for user ${user.email} has been reset.`)
+    },
   },
 
   // メール認証設定

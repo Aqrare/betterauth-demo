@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { authClient } from "../lib/auth";
 import {
 	AuthCard,
@@ -79,17 +79,22 @@ export default function Login() {
 					required
 				/>
 
-				<div className="flex items-center">
-					<input
-						id="rememberMe"
-						type="checkbox"
-						checked={rememberMe}
-						onChange={(e) => setRememberMe(e.target.checked)}
-						className="h-4 w-4 accent-cyan-600 border-cyan-300 rounded"
-					/>
-					<label htmlFor="rememberMe" className="ml-2 block text-sm text-cyan-900">
-						Remember me
-					</label>
+				<div className="flex items-center justify-between">
+					<div className="flex items-center">
+						<input
+							id="rememberMe"
+							type="checkbox"
+							checked={rememberMe}
+							onChange={(e) => setRememberMe(e.target.checked)}
+							className="h-4 w-4 accent-cyan-600 border-cyan-300 rounded"
+						/>
+						<label htmlFor="rememberMe" className="ml-2 block text-sm text-cyan-900">
+							Remember me
+						</label>
+					</div>
+					<Link to="/forgot-password" className="text-sm text-cyan-800 hover:underline">
+						パスワードを忘れた場合
+					</Link>
 				</div>
 
 				<SubmitButton loading={loading}>
