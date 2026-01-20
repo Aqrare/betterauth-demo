@@ -5,7 +5,6 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 interface Database {
-  // テーブル定義はBetterAuth導入時に追加
 }
 
 const dialect = new PostgresDialect({

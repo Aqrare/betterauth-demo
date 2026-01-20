@@ -32,6 +32,7 @@ export default function Settings() {
 	// Passkey関連の状態
 	const [showAddPasskeyForm, setShowAddPasskeyForm] = useState(false);
 	const [passkeyName, setPasskeyName] = useState("");
+	const [passkeyTwoFactorCode, setPasskeyTwoFactorCode] = useState("");
 	const [passkeyError, setPasskeyError] = useState("");
 	const [passkeySuccess, setPasskeySuccess] = useState("");
 	const [passkeyLoading, setPasskeyLoading] = useState(false);
@@ -39,6 +40,8 @@ export default function Settings() {
 	const [passkeyListLoading, setPasskeyListLoading] = useState(false);
 	const [editingPasskeyId, setEditingPasskeyId] = useState<string | null>(null);
 	const [editingPasskeyName, setEditingPasskeyName] = useState("");
+	const [deletingPasskeyId, setDeletingPasskeyId] = useState<string | null>(null);
+	const [deleteTwoFactorCode, setDeleteTwoFactorCode] = useState("");
 
 	// パスキー一覧を取得
 	const fetchPasskeys = async () => {
@@ -269,9 +272,18 @@ export default function Settings() {
 		}
 	};
 
+	// パスキー削除の確認
+	const handleDeletePasskeyClick = (passkeyId: string) => {
+		setDeletingPasskeyId(passkeyId);
+		setDeleteTwoFactorCode("");
+		setPasskeyError("");
+	};
+
 	// パスキーを削除
-	const handleDeletePasskey = async (passkeyId: string) => {
-		if (!confirm("このパスキーを削除してもよろしいですか？")) {
+	const handleDeletePasskey = async (e: React.FormEvent) => {
+		e.preventDefault();
+
+		if (!deletingPasskeyId) {
 			return;
 		}
 
@@ -279,14 +291,36 @@ export default function Settings() {
 		setPasskeyLoading(true);
 
 		try {
+			// 2FAが有効な場合は先に検証
+			if (twoFactorEnabled) {
+				if (!deleteTwoFactorCode) {
+					setPasskeyError("2FAコードを入力してください");
+					setPasskeyLoading(false);
+					return;
+				}
+
+				const { error: verifyError } = await authClient.twoFactor.verifyTotp({
+					code: deleteTwoFactorCode,
+				});
+
+				if (verifyError) {
+					setPasskeyError(verifyError.message || "2FAコードの検証に失敗しました");
+					setPasskeyLoading(false);
+					return;
+				}
+			}
+
+			// パスキーを削除
 			const { error } = await authClient.passkey.deletePasskey({
-				id: passkeyId,
+				id: deletingPasskeyId,
 			});
 
 			if (error) {
 				setPasskeyError(error.message || "パスキーの削除に失敗しました");
 			} else {
 				setPasskeySuccess("パスキーを削除しました");
+				setDeletingPasskeyId(null);
+				setDeleteTwoFactorCode("");
 				await fetchPasskeys(); // パスキー一覧を再取得
 				setTimeout(() => setPasskeySuccess(""), 5000);
 			}
@@ -304,6 +338,26 @@ export default function Settings() {
 		setPasskeyLoading(true);
 
 		try {
+			// 2FAが有効な場合は先に検証
+			if (twoFactorEnabled) {
+				if (!passkeyTwoFactorCode) {
+					setPasskeyError("2FAコードを入力してください");
+					setPasskeyLoading(false);
+					return;
+				}
+
+				const { error: verifyError } = await authClient.twoFactor.verifyTotp({
+					code: passkeyTwoFactorCode,
+				});
+
+				if (verifyError) {
+					setPasskeyError(verifyError.message || "2FAコードの検証に失敗しました");
+					setPasskeyLoading(false);
+					return;
+				}
+			}
+
+			// パスキーを登録
 			const { error } = await authClient.passkey.addPasskey({
 				name: passkeyName || undefined,
 			});
@@ -314,6 +368,7 @@ export default function Settings() {
 				setPasskeySuccess("パスキーを登録しました");
 				setShowAddPasskeyForm(false);
 				setPasskeyName("");
+				setPasskeyTwoFactorCode("");
 				await fetchPasskeys(); // パスキー一覧を再取得
 				setTimeout(() => setPasskeySuccess(""), 5000);
 			}
@@ -688,6 +743,17 @@ export default function Settings() {
                     onChange={setPasskeyName}
                     placeholder="例: MacBook Pro, iPhone"
                   />
+                  {twoFactorEnabled && (
+                    <InputField
+                      label="2FA認証コード"
+                      type="text"
+                      value={passkeyTwoFactorCode}
+                      onChange={setPasskeyTwoFactorCode}
+                      placeholder="000000"
+                      maxLength={6}
+                      required
+                    />
+                  )}
                   <div className="flex gap-2">
                     <Button type="submit" disabled={passkeyLoading}>
                       {passkeyLoading ? "登録中..." : "パスキーを登録"}
@@ -698,6 +764,7 @@ export default function Settings() {
                       onClick={() => {
                         setShowAddPasskeyForm(false);
                         setPasskeyName("");
+                        setPasskeyTwoFactorCode("");
                         setPasskeyError("");
                       }}
                     >
@@ -751,6 +818,45 @@ export default function Settings() {
                             </Button>
                           </div>
                         </div>
+                      ) : deletingPasskeyId === passkey.id ? (
+                        // 削除確認モード
+                        <div className="space-y-3">
+                          <div className="p-3 bg-red-50/60 rounded-lg border border-red-200">
+                            <p className="font-medium text-red-900 mb-2">パスキーの削除</p>
+                            <p className="text-sm text-red-800 mb-3">
+                              「{passkey.name || "名前なし"}」を削除してもよろしいですか？
+                            </p>
+                            <form onSubmit={handleDeletePasskey} className="space-y-3">
+                              {twoFactorEnabled && (
+                                <InputField
+                                  label="2FA認証コード"
+                                  type="text"
+                                  value={deleteTwoFactorCode}
+                                  onChange={setDeleteTwoFactorCode}
+                                  placeholder="000000"
+                                  maxLength={6}
+                                  required
+                                />
+                              )}
+                              <div className="flex gap-2">
+                                <Button type="submit" variant="danger" disabled={passkeyLoading}>
+                                  {passkeyLoading ? "削除中..." : "削除"}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  onClick={() => {
+                                    setDeletingPasskeyId(null);
+                                    setDeleteTwoFactorCode("");
+                                    setPasskeyError("");
+                                  }}
+                                >
+                                  キャンセル
+                                </Button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
                       ) : (
                         // 通常表示モード
                         <div className="flex items-center justify-between">
@@ -779,7 +885,7 @@ export default function Settings() {
                               </svg>
                             </button>
                             <button
-                              onClick={() => handleDeletePasskey(passkey.id)}
+                              onClick={() => handleDeletePasskeyClick(passkey.id)}
                               disabled={passkeyLoading}
                               className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed p-1"
                               title="削除"
