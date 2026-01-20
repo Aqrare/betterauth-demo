@@ -2,6 +2,7 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import dotenv from 'dotenv'
+import { auth } from './lib/auth.js'
 
 dotenv.config()
 
@@ -18,6 +19,11 @@ app.get('/', (c) => {
 
 app.get('/health', (c) => {
   return c.json({ status: 'ok' })
+})
+
+// BetterAuth endpoints
+app.on(['POST', 'GET'], '/api/auth/**', (c) => {
+  return auth.handler(c.req.raw)
 })
 
 const port = Number(process.env.PORT) || 3000

@@ -1,10 +1,22 @@
+import Layout from "../components/Layout";
+import { authClient } from "../lib/auth";
+
 export default function Dashboard() {
+	const { data: session } = authClient.useSession();
+
 	return (
-		<div className="min-h-screen bg-gray-100 flex items-center justify-center">
-			<div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-				<h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
-				<p className="text-gray-600">Welcome! You are logged in.</p>
+		<Layout title="Dashboard" subtitle={`Welcome back, ${session?.user.name}`}>
+			<div className="bg-white/40 backdrop-blur-lg p-8 rounded-2xl shadow-lg border border-white/50 max-w-2xl">
+				<h2 className="text-xl font-bold text-cyan-900 mb-4">Welcome to Your Dashboard</h2>
+				<p className="text-cyan-700 mb-6">
+					This is your personal dashboard. Navigate using the sidebar to access different features.
+				</p>
+				<div className="bg-white/50 backdrop-blur-sm p-4 rounded-xl border border-white/50">
+					<p className="text-sm text-cyan-800">
+						<span className="font-medium">Account Status:</span> Active
+					</p>
+				</div>
 			</div>
-		</div>
+		</Layout>
 	);
 }
