@@ -26,7 +26,8 @@ export default function Signup() {
 					setLoading(true);
 				},
 				onSuccess: () => {
-					navigate("/dashboard");
+					// メール認証が必要なのでCheckEmailページへ
+					navigate("/check-email", { state: { email } });
 				},
 				onError: (ctx) => {
 					setError(ctx.error.message);

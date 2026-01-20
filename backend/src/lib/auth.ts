@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth"
 import { Pool } from "pg"
 import dotenv from "dotenv"
+import { sendVerificationEmail } from "./email.js"
 
 // 環境変数を確実に読み込む
 dotenv.config()
@@ -14,6 +15,28 @@ export const auth = betterAuth({
   // Email & Passwordプロバイダーを有効化
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true, // メール認証を必須に
+  },
+
+  // メール認証設定
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url, token }) => {
+      // 認証完了後のリダイレクト先をURLに追加
+      const urlWithCallback = new URL(url)
+      urlWithCallback.searchParams.set(
+        'callbackURL',
+        `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard`
+      )
+
+      // タイミング攻撃を防ぐためawaitしない
+      void sendVerificationEmail({
+        to: user.email,
+        url: urlWithCallback.toString(),
+        userName: user.name,
+      })
+    },
+    sendOnSignUp: true, // サインアップ時に自動送信
+    autoSignInAfterVerification: true, // 認証後自動ログイン
   },
 
   // ソーシャルログインプロバイダー
