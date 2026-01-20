@@ -16,6 +16,23 @@ export const auth = betterAuth({
     enabled: true,
   },
 
+  // ソーシャルログインプロバイダー
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      prompt: "select_account", // 毎回アカウント選択を表示
+    },
+  },
+
+  // アカウントリンク設定（自動リンク有効）
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"], // Googleはメール確認済みなので信頼できる
+    },
+  },
+
   // アプリケーションの基本設定
   secret: process.env.BETTER_AUTH_SECRET!,
   baseURL: process.env.BETTER_AUTH_URL!,
