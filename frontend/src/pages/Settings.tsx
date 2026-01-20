@@ -17,14 +17,17 @@ export default function Settings() {
 	const [twoFactorEnabled, setTwoFactorEnabled] = useState(session?.user.twoFactorEnabled || false);
 	const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
 	const [showDisableForm, setShowDisableForm] = useState(false);
+	const [showRegenerateForm, setShowRegenerateForm] = useState(false);
 	const [twoFactorPassword, setTwoFactorPassword] = useState("");
 	const [disablePassword, setDisablePassword] = useState("");
+	const [regeneratePassword, setRegeneratePassword] = useState("");
 	const [qrCode, setQrCode] = useState("");
 	const [backupCodes, setBackupCodes] = useState<string[]>([]);
 	const [verificationCode, setVerificationCode] = useState("");
 	const [twoFactorError, setTwoFactorError] = useState("");
 	const [twoFactorSuccess, setTwoFactorSuccess] = useState("");
 	const [twoFactorLoading, setTwoFactorLoading] = useState(false);
+	const [backupCodesCopied, setBackupCodesCopied] = useState(false);
 
 	const handlePasswordChange = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -85,6 +88,10 @@ export default function Settings() {
 			} else if (data) {
 				// TOTP URIを保存（QRコードの生成に使用）
 				setQrCode(data.totpURI);
+				// バックアップコードを保存
+				if (data.backupCodes) {
+					setBackupCodes(data.backupCodes);
+				}
 				setTwoFactorPassword("");
 			}
 		} catch (error) {
@@ -118,6 +125,56 @@ export default function Settings() {
 			}
 		} catch (error) {
 			setTwoFactorError("コードの検証中にエラーが発生しました");
+		} finally {
+			setTwoFactorLoading(false);
+		}
+	};
+
+	// バックアップコードをコピー
+	const handleCopyBackupCodes = () => {
+		const codesText = backupCodes.join("\n");
+		navigator.clipboard.writeText(codesText).then(() => {
+			setBackupCodesCopied(true);
+			setTimeout(() => setBackupCodesCopied(false), 3000);
+		});
+	};
+
+	// バックアップコードをダウンロード
+	const handleDownloadBackupCodes = () => {
+		const codesText = backupCodes.join("\n");
+		const blob = new Blob([codesText], { type: "text/plain" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = "backup-codes.txt";
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	};
+
+	// バックアップコードを再生成
+	const handleRegenerateBackupCodes = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setTwoFactorError("");
+		setTwoFactorLoading(true);
+
+		try {
+			const { data, error } = await authClient.twoFactor.generateBackupCodes({
+				password: regeneratePassword,
+			});
+
+			if (error) {
+				setTwoFactorError(error.message || "バックアップコードの生成に失敗しました");
+			} else if (data) {
+				setBackupCodes(data.backupCodes);
+				setTwoFactorSuccess("新しいバックアップコードを生成しました。古いコードは無効になりました。");
+				setRegeneratePassword("");
+				setShowRegenerateForm(false);
+				setTimeout(() => setTwoFactorSuccess(""), 5000);
+			}
+		} catch (error) {
+			setTwoFactorError("バックアップコードの生成中にエラーが発生しました");
 		} finally {
 			setTwoFactorLoading(false);
 		}
@@ -265,17 +322,37 @@ export default function Settings() {
 
                 {/* バックアップコード */}
                 {backupCodes.length > 0 && (
-                  <div className="p-4 bg-white/30 rounded-xl">
-                    <p className="font-medium text-cyan-900 mb-2">ステップ2: バックアップコードを保存</p>
-                    <p className="text-sm text-cyan-800 mb-4">
-                      以下のバックアップコードを安全な場所に保存してください。デバイスを紛失した場合、これらのコードでログインできます。
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 p-4 bg-cyan-900/10 rounded-lg font-mono text-sm">
+                  <div className="p-4 bg-amber-50/60 rounded-xl border-2 border-amber-300">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="mt-0.5">
+                        <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-bold text-amber-900 mb-1">重要: バックアップコードを保存してください</p>
+                        <p className="text-sm text-amber-800 mb-3">
+                          これらのコードは一度しか表示されません。デバイスを紛失した場合、これらのコードでログインできます。
+                          安全な場所に保管してください。
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 p-4 bg-white/80 rounded-lg font-mono text-sm mb-4 border border-amber-200">
                       {backupCodes.map((code, index) => (
-                        <div key={index} className="text-cyan-900">
+                        <div key={index} className="text-cyan-900 py-1">
                           {code}
                         </div>
                       ))}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button onClick={handleCopyBackupCodes} variant="primary">
+                        {backupCodesCopied ? "コピーしました ✓" : "コピー"}
+                      </Button>
+                      <Button onClick={handleDownloadBackupCodes} variant="secondary">
+                        ダウンロード
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -353,6 +430,106 @@ export default function Settings() {
                           onClick={() => {
                             setShowDisableForm(false);
                             setDisablePassword("");
+                            setTwoFactorError("");
+                          }}
+                        >
+                          キャンセル
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {/* バックアップコード表示・再生成 */}
+                {!showDisableForm && !showRegenerateForm && backupCodes.length === 0 && (
+                  <div className="p-4 bg-white/30 rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-cyan-900 mb-1">バックアップコード</p>
+                        <p className="text-sm text-cyan-800">
+                          デバイスにアクセスできない場合に使用できるバックアップコードを生成
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => setShowRegenerateForm(true)}
+                        disabled={twoFactorLoading}
+                      >
+                        生成
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* バックアップコードが既に存在する場合 */}
+                {!showDisableForm && !showRegenerateForm && backupCodes.length > 0 && (
+                  <div className="p-4 bg-white/30 rounded-xl">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="font-medium text-cyan-900 mb-1">バックアップコード</p>
+                        <p className="text-sm text-cyan-800">
+                          新しいコードを生成すると、古いコードは無効になります
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => setShowRegenerateForm(true)}
+                        disabled={twoFactorLoading}
+                      >
+                        再生成
+                      </Button>
+                    </div>
+
+                    {/* 生成されたバックアップコードを表示 */}
+                    <div className="p-4 bg-amber-50/60 rounded-xl border border-amber-300">
+                      <p className="font-medium text-amber-900 mb-2 text-sm">
+                        現在のバックアップコード
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 p-3 bg-white/80 rounded-lg font-mono text-xs mb-3 border border-amber-200">
+                        {backupCodes.map((code, index) => (
+                          <div key={index} className="text-cyan-900 py-0.5">
+                            {code}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={handleCopyBackupCodes} variant="secondary">
+                          {backupCodesCopied ? "コピーしました ✓" : "コピー"}
+                        </Button>
+                        <Button onClick={handleDownloadBackupCodes} variant="secondary">
+                          ダウンロード
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* バックアップコード再生成フォーム */}
+                {showRegenerateForm && (
+                  <div className="p-4 bg-white/30 rounded-xl">
+                    <p className="font-medium text-cyan-900 mb-2">バックアップコードを生成</p>
+                    <p className="text-sm text-cyan-800 mb-4">
+                      {backupCodes.length > 0
+                        ? "新しいバックアップコードを生成します。古いコードは無効になります。"
+                        : "デバイスにアクセスできない場合に使用できるバックアップコードを生成します。"}
+                      パスワードを入力してください。
+                    </p>
+                    <form onSubmit={handleRegenerateBackupCodes} className="space-y-4">
+                      <InputField
+                        label="パスワード"
+                        type="password"
+                        value={regeneratePassword}
+                        onChange={setRegeneratePassword}
+                        required
+                      />
+                      <div className="flex gap-2">
+                        <Button type="submit" disabled={twoFactorLoading}>
+                          {twoFactorLoading ? "生成中..." : "バックアップコードを生成"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => {
+                            setShowRegenerateForm(false);
+                            setRegeneratePassword("");
                             setTwoFactorError("");
                           }}
                         >
