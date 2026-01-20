@@ -12,8 +12,8 @@ export default function Dashboard() {
 	// ローディング中
 	if (isPending) {
 		return (
-			<div className="min-h-screen bg-gray-100 flex items-center justify-center">
-				<div className="text-gray-600">Loading...</div>
+			<div className="min-h-screen bg-gradient-to-br from-white via-sky-100 to-cyan-200 flex items-center justify-center">
+				<div className="text-cyan-900 text-lg font-medium">Loading...</div>
 			</div>
 		);
 	}
@@ -35,20 +35,20 @@ export default function Dashboard() {
 	};
 
 	return (
-		<div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-			<div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-				<h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
+		<div className="min-h-screen bg-gradient-to-br from-white via-sky-100 to-cyan-200 flex items-center justify-center p-4">
+			<div className="bg-white/40 backdrop-blur-lg p-8 rounded-2xl shadow-xl border border-white/50 max-w-md w-full">
+				<h1 className="text-2xl font-bold text-cyan-900 mb-6">Dashboard</h1>
 
 				<div className="space-y-4">
-					<div className="border-b pb-4">
-						<h2 className="text-sm font-medium text-gray-500 mb-2">
+					<div className="border-b border-cyan-200 pb-4">
+						<h2 className="text-sm font-medium text-cyan-800 mb-2">
 							User Information
 						</h2>
 						<div className="space-y-2">
-							<p className="text-gray-900">
+							<p className="text-cyan-900">
 								<span className="font-medium">Name:</span> {session.user.name}
 							</p>
-							<p className="text-gray-900">
+							<p className="text-cyan-900">
 								<span className="font-medium">Email:</span> {session.user.email}
 							</p>
 						</div>
@@ -57,7 +57,7 @@ export default function Dashboard() {
 					<button
 						type="button"
 						onClick={handleSignOut}
-						className="w-full bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
+						className="w-full bg-red-100/60 backdrop-blur-sm text-red-700 py-3 px-4 rounded-xl border border-red-200 hover:bg-red-100/80 transition-all duration-300 font-medium"
 					>
 						Sign Out
 					</button>
