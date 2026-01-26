@@ -21,6 +21,11 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok' })
 })
 
+// BetterAuth endpoints
+app.on(['POST', 'GET'], '/api/auth/**', (c) => {
+  return auth.handler(c.req.raw)
+})
+
 // Custom API: Get user accounts
 app.get('/api/user/accounts', async (c) => {
   try {
@@ -54,11 +59,6 @@ app.get('/api/user/accounts', async (c) => {
     console.error('Error fetching user accounts:', error)
     return c.json({ error: 'Internal server error' }, 500)
   }
-})
-
-// BetterAuth endpoints
-app.on(['POST', 'GET'], '/api/auth/**', (c) => {
-  return auth.handler(c.req.raw)
 })
 
 const port = Number(process.env.PORT) || 3000

@@ -33,7 +33,6 @@ export async function sendVerificationEmail({
 					value: "email_verification",
 				},
 			],
-			// クリックトラッキングを無効化
 			headers: {
 				"X-Entity-Ref-ID": "email-verification",
 			},
