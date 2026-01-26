@@ -8,6 +8,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
+import SetPassword from "./pages/SetPassword";
 import Settings from "./pages/Settings";
 import Signup from "./pages/Signup";
 import TwoFactorVerify from "./pages/TwoFactorVerify";
@@ -22,6 +23,7 @@ createRoot(document.getElementById("root")!).render(
 				<Route path="/signup" element={<Signup />} />
 				<Route path="/forgot-password" element={<ForgotPassword />} />
 				<Route path="/reset-password" element={<ResetPassword />} />
+				<Route path="/set-password" element={<SetPassword />} />
 				<Route path="/two-factor-verify" element={<TwoFactorVerify />} />
 				<Route path="/check-email" element={<CheckEmail />} />
 				<Route path="/verify-email" element={<VerifyEmail />} />

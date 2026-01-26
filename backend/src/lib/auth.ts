@@ -20,9 +20,8 @@ export const auth = betterAuth({
   // Email & Passwordプロバイダーを有効化
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true, // メール認証を必須に
+    requireEmailVerification: true,
     sendResetPassword: async ({ user, url, token }) => {
-      // タイミング攻撃を防ぐためawaitしない
       void sendPasswordResetEmail({
         to: user.email,
         url,
@@ -44,7 +43,6 @@ export const auth = betterAuth({
         `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard`
       )
 
-      // タイミング攻撃を防ぐためawaitしない
       void sendVerificationEmail({
         to: user.email,
         url: urlWithCallback.toString(),
@@ -64,11 +62,11 @@ export const auth = betterAuth({
     },
   },
 
-  // アカウントリンク設定（自動リンク有効）
+  // アカウントリンク設定
   account: {
     accountLinking: {
       enabled: true,
-      trustedProviders: ["google"], // Googleはメール確認済みなので信頼できる
+      trustedProviders: ["google"], 
     },
   },
 
