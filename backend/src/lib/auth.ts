@@ -1,12 +1,8 @@
 import { betterAuth } from "better-auth"
 import { Pool } from "pg"
-import dotenv from "dotenv"
 import { sendVerificationEmail, sendPasswordResetEmail } from "./email.js"
 import { twoFactor } from "better-auth/plugins";
 import { passkey } from "@better-auth/passkey";
-
-// 環境変数を確実に読み込む
-dotenv.config()
 
 export const auth = betterAuth({
   appName: "Auth Demo App",
@@ -26,10 +22,10 @@ export const auth = betterAuth({
         to: user.email,
         url,
         userName: user.name,
-      })
+      });
     },
     onPasswordReset: async ({ user }) => {
-      console.log(`Password for user ${user.email} has been reset.`)
+      console.log(`Password for user ${user.email} has been reset.`);
     },
   },
 
@@ -37,17 +33,17 @@ export const auth = betterAuth({
   emailVerification: {
     sendVerificationEmail: async ({ user, url, token }) => {
       // 認証完了後のリダイレクト先をURLに追加
-      const urlWithCallback = new URL(url)
+      const urlWithCallback = new URL(url);
       urlWithCallback.searchParams.set(
-        'callbackURL',
-        `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard`
-      )
+        "callbackURL",
+        `${process.env.FRONTEND_URL || "http://localhost:5173"}/dashboard`,
+      );
 
       void sendVerificationEmail({
         to: user.email,
         url: urlWithCallback.toString(),
         userName: user.name,
-      })
+      });
     },
     sendOnSignUp: true, // サインアップ時に自動送信
     autoSignInAfterVerification: true, // 認証後自動ログイン
@@ -66,7 +62,7 @@ export const auth = betterAuth({
   account: {
     accountLinking: {
       enabled: true,
-      trustedProviders: ["google"], 
+      trustedProviders: ["google"],
     },
   },
 
@@ -76,4 +72,4 @@ export const auth = betterAuth({
 
   // フロントエンドからのアクセスを許可
   trustedOrigins: ["http://localhost:5173"],
-})
+});
