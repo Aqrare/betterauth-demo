@@ -71,7 +71,8 @@ services:
       - /app/node_modules
     environment:
       PORT: 4001
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      AUTH_MS_URL: http://backend:3000
+      NODE_ENV: development
     depends_on:
       - backend
     networks:

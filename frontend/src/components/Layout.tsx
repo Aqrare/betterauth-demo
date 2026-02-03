@@ -81,6 +81,19 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
 					>
 						{sidebarOpen ? "⚙️ Settings" : "⚙️"}
 					</button>
+					{session.user.role === "admin" && (
+						<button
+							type="button"
+							onClick={() => navigate("/admin/users")}
+							className={`w-full text-left px-4 py-3 rounded-xl transition-all ${
+								isActive("/admin/users")
+									? "bg-purple-100/50 backdrop-blur-sm text-purple-900 border border-purple-200/50 font-medium"
+									: "text-purple-800 hover:bg-purple-50/30"
+							}`}
+						>
+							{sidebarOpen ? "👥 ユーザー管理" : "👥"}
+						</button>
+					)}
 				</nav>
 				<button
 					type="button"

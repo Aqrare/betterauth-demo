@@ -4,17 +4,20 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "./email.js"
 import { twoFactor } from "better-auth/plugins";
 import { passkey } from "@better-auth/passkey";
 import { jwt } from "better-auth/plugins";
+import { admin } from "better-auth/plugins";
 
 export const auth = betterAuth({
   appName: "Auth Demo App",
   plugins: [
     twoFactor(),
     passkey(),
+    admin(),
     jwt({
       jwt: {
         definePayload: ({ user }) => ({
           sub: user.id,
           email: user.email,
+          role: user.role || "user",
         }),
       },
     }),

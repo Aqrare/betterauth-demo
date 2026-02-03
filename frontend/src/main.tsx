@@ -12,6 +12,7 @@ import SetPassword from "./pages/SetPassword";
 import Settings from "./pages/Settings";
 import Signup from "./pages/Signup";
 import TwoFactorVerify from "./pages/TwoFactorVerify";
+import UserManagement from "./pages/UserManagement";
 import VerifyEmail from "./pages/VerifyEmail";
 
 createRoot(document.getElementById("root")!).render(
@@ -29,6 +30,7 @@ createRoot(document.getElementById("root")!).render(
 				<Route path="/verify-email" element={<VerifyEmail />} />
 				<Route path="/dashboard" element={<Dashboard />} />
 				<Route path="/settings" element={<Settings />} />
+				<Route path="/admin/users" element={<UserManagement />} />
 			</Routes>
 		</BrowserRouter>
 	</StrictMode>,

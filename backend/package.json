@@ -5,7 +5,7 @@
     "dev": "bun --watch src/index.ts",
     "build": "bun build src/index.ts --outdir ./dist --target bun",
     "start": "bun run dist/index.js",
-    "migrate": "better-auth migrate"
+    "migrate": "./node_modules/.bin/better-auth migrate"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.4.16",

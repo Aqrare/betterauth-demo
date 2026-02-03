@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { jwtAuth } from './middleware/jwt.js'
+import { requireAdmin } from './middleware/admin.js'
 
 const app = new Hono()
 
@@ -15,84 +16,44 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok', service: 'resource-ms' })
 })
 
-// 簡易的なTodoストア（インメモリ）
-interface Todo {
-  id: string
-  userId: string
-  title: string
-  completed: boolean
-  createdAt: string
-}
-
-const todos: Todo[] = []
-
-// 以下のエンドポイントはすべてJWT認証が必要
+// JWT認証が必要なエンドポイント
 app.use('/api/*', jwtAuth())
 
-// Todo一覧取得（自分のTodoのみ）
-app.get('/api/todos', (c) => {
+// 一般ユーザーでもアクセス可能なテストエンドポイント
+app.get('/api/test', (c) => {
   const user = c.get('user') as any
-  const userTodos = todos.filter(todo => todo.userId === user.sub || todo.userId === user.userId)
 
   return c.json({
-    todos: userTodos,
+    success: true,
+    message: 'JWT認証成功！',
     user: {
-      id: user.sub || user.userId,
+      id: user.sub,
       email: user.email,
-    }
+      role: user.role || 'user',
+    },
+    timestamp: new Date().toISOString(),
   })
 })
 
-// Todo作成
-app.post('/api/todos', async (c) => {
+// 管理者専用エンドポイント（admin権限が必要）
+app.get('/api/admin/test', requireAdmin(), (c) => {
   const user = c.get('user') as any
-  const body = await c.req.json()
 
-  const newTodo: Todo = {
-    id: crypto.randomUUID(),
-    userId: user.sub || user.userId,
-    title: body.title,
-    completed: false,
-    createdAt: new Date().toISOString(),
-  }
-
-  todos.push(newTodo)
-
-  return c.json({ todo: newTodo }, 201)
-})
-
-// Todo更新
-app.patch('/api/todos/:id', async (c) => {
-  const user = c.get('user') as any
-  const todoId = c.req.param('id')
-  const body = await c.req.json()
-
-  const todo = todos.find(t => t.id === todoId && t.userId === (user.sub || user.userId))
-
-  if (!todo) {
-    return c.json({ error: 'Todo not found' }, 404)
-  }
-
-  if (body.title !== undefined) todo.title = body.title
-  if (body.completed !== undefined) todo.completed = body.completed
-
-  return c.json({ todo })
-})
-
-// Todo削除
-app.delete('/api/todos/:id', (c) => {
-  const user = c.get('user') as any
-  const todoId = c.req.param('id')
-
-  const index = todos.findIndex(t => t.id === todoId && t.userId === (user.sub || user.userId))
-
-  if (index === -1) {
-    return c.json({ error: 'Todo not found' }, 404)
-  }
-
-  todos.splice(index, 1)
-
-  return c.json({ message: 'Todo deleted' })
+  return c.json({
+    success: true,
+    message: '管理者権限確認成功！',
+    user: {
+      id: user.sub,
+      email: user.email,
+      role: user.role,
+    },
+    adminFeatures: [
+      'ユーザー管理',
+      'システム設定',
+      '統計データ閲覧',
+    ],
+    timestamp: new Date().toISOString(),
+  })
 })
 
 const port = Number(process.env.PORT) || 4001
