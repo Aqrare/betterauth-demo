@@ -7,6 +7,7 @@ import { createMiddleware } from 'hono/factory'
 export const requireAdmin = () => {
   return createMiddleware(async (c, next) => {
     const user = c.get('user') as any
+    console.log(user)
 
     if (!user) {
       return c.json({

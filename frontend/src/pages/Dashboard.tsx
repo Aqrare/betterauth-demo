@@ -32,18 +32,46 @@ export default function Dashboard() {
 		token: string;
 		decoded: any;
 	} | null>(null);
+	const [cachedToken, setCachedToken] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
+	const [showCreateOrg, setShowCreateOrg] = useState(false);
+	const [orgName, setOrgName] = useState("");
 
-	// JWTを取得してデコード表示
+	// JWTトークンを取得または再利用
+	const getOrFetchToken = async (): Promise<string> => {
+		// 既にキャッシュされたトークンがあれば再利用
+		if (cachedToken) {
+			console.log('Using cached JWT token');
+			return cachedToken;
+		}
+
+		// トークンを新規取得
+		console.log('Fetching new JWT token');
+		const token = await getJWTToken();
+		if (!token) {
+			throw new Error("JWTトークンを取得できませんでした");
+		}
+
+		// キャッシュに保存
+		setCachedToken(token);
+		return token;
+	};
+
+	// JWTを取得してデコード表示（常に最新を取得）
 	const handleShowJWT = async () => {
 		setLoading(true);
 		setJwtInfo(null);
 
 		try {
+			// 常に最新のトークンを取得
+			console.log('Fetching fresh JWT token');
 			const token = await getJWTToken();
 			if (!token) {
 				throw new Error("JWTトークンを取得できませんでした");
 			}
+
+			// キャッシュに保存
+			setCachedToken(token);
 
 			const decoded = decodeJWT(token);
 			if (!decoded) {
@@ -66,11 +94,7 @@ export default function Dashboard() {
 		setTestResult(null);
 
 		try {
-			const token = await getJWTToken();
-			if (!token) {
-				throw new Error("JWTトークンを取得できませんでした");
-			}
-
+			const token = await getOrFetchToken();
 			const result = await testJWTAuth(token);
 			setTestResult({
 				type: "success",
@@ -87,17 +111,46 @@ export default function Dashboard() {
 		}
 	};
 
+	// 組織を作成（authClientを使用）
+	const handleCreateOrganization = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!orgName.trim()) {
+			alert("組織名を入力してください");
+			return;
+		}
+
+		setLoading(true);
+		try {
+			// authClientのorganization.createメソッドを使用
+			const { data, error } = await authClient.organization.create({
+				name: orgName,
+				slug: orgName.toLowerCase().replace(/\s+/g, "-"),
+			});
+
+			if (error) {
+				throw new Error(error.message || "組織の作成に失敗しました");
+			}
+
+			alert("組織を作成しました！ページをリロードしてください。");
+			setShowCreateOrg(false);
+			setOrgName("");
+
+			// セッションを再取得
+			window.location.reload();
+		} catch (error: any) {
+			alert(error.message || "組織の作成に失敗しました");
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	// 管理者権限テスト（管理者のみアクセス可能）
 	const handleAdminTest = async () => {
 		setLoading(true);
 		setTestResult(null);
 
 		try {
-			const token = await getJWTToken();
-			if (!token) {
-				throw new Error("JWTトークンを取得できませんでした");
-			}
-
+			const token = await getOrFetchToken();
 			const result = await testAdminAuth(token);
 			setTestResult({
 				type: "success",
@@ -126,6 +179,7 @@ export default function Dashboard() {
 
 				{/* ユーザー情報 */}
 				<div className="bg-white/50 backdrop-blur-sm p-4 rounded-xl border border-white/50 mb-6">
+					<h3 className="font-semibold text-cyan-900 mb-2">ユーザー情報</h3>
 					<p className="text-sm text-cyan-800">
 						<span className="font-medium">Email:</span> {session?.user.email}
 					</p>
@@ -133,6 +187,73 @@ export default function Dashboard() {
 						<span className="font-medium">Role:</span>{" "}
 						{(session?.user as any)?.role || "user"}
 					</p>
+				</div>
+
+				{/* 組織情報 */}
+				<div className="bg-purple-50/50 backdrop-blur-sm p-4 rounded-xl border border-purple-200/50 mb-6">
+					<h3 className="font-semibold text-purple-900 mb-2">組織情報</h3>
+					{(session as any)?.activeOrganization ? (
+						<>
+							<p className="text-sm text-purple-800">
+								<span className="font-medium">組織名:</span>{" "}
+								{(session as any).activeOrganization.name}
+							</p>
+							<p className="text-sm text-purple-800 mt-1">
+								<span className="font-medium">組織ID:</span>{" "}
+								{(session as any).activeOrganization.id}
+							</p>
+							<p className="text-sm text-purple-800 mt-1">
+								<span className="font-medium">組織ロール:</span>{" "}
+								{(session as any).activeOrganization.role || "member"}
+							</p>
+						</>
+					) : (
+						<>
+							<p className="text-sm text-purple-700 italic mb-3">
+								組織に所属していません
+							</p>
+
+							{!showCreateOrg ? (
+								<button
+									onClick={() => setShowCreateOrg(true)}
+									className="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
+								>
+									組織を作成
+								</button>
+							) : (
+								<form onSubmit={handleCreateOrganization} className="space-y-3">
+									<input
+										type="text"
+										value={orgName}
+										onChange={(e) => setOrgName(e.target.value)}
+										placeholder="組織名を入力"
+										className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+										disabled={loading}
+									/>
+									<div className="flex gap-2">
+										<button
+											type="submit"
+											disabled={loading}
+											className="flex-1 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
+										>
+											{loading ? "作成中..." : "作成"}
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setShowCreateOrg(false);
+												setOrgName("");
+											}}
+											disabled={loading}
+											className="flex-1 bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
+										>
+											キャンセル
+										</button>
+									</div>
+								</form>
+							)}
+						</>
+					)}
 				</div>
 
 				{/* JWTトークン表示ボタン */}
