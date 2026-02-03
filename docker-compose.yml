@@ -59,6 +59,25 @@ services:
       - auth-demo-network
     command: bun run dev --host 0.0.0.0
 
+  resource-ms:
+    build:
+      context: ./resource-ms
+      dockerfile: Dockerfile
+    container_name: auth-demo-resource-ms
+    ports:
+      - "4001:4001"
+    volumes:
+      - ./resource-ms:/app
+      - /app/node_modules
+    environment:
+      PORT: 4001
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+    depends_on:
+      - backend
+    networks:
+      - auth-demo-network
+    command: bun --watch src/index.ts
+
 volumes:
   postgres-data:
 

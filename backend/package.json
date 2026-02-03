@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "build": "bun build src/index.ts --outdir ./dist --target bun",
-    "start": "bun run dist/index.js"
+    "start": "bun run dist/index.js",
+    "migrate": "better-auth migrate"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.4.16",
@@ -15,6 +16,7 @@
     "resend": "^6.8.0"
   },
   "devDependencies": {
+    "@better-auth/cli": "^1.4.16",
     "@types/pg": "^8.16.0",
     "typescript": "^5.8.3"
   }

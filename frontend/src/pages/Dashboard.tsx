@@ -4,6 +4,19 @@ import { authClient } from "../lib/auth";
 export default function Dashboard() {
 	const { data: session } = authClient.useSession();
 
+	const testJWT = async () => {
+		const { data, error } = await authClient.token();
+		if (error) {
+			console.error("JWT Error:", error);
+			alert(`Error: ${error.message}`);
+		}
+		if (data) {
+			const jwtToken = data.token;
+			console.log("JWT Token:", jwtToken);
+			alert("JWT取得成功！コンソールを確認してください");
+		}
+	};
+
 	return (
 		<Layout title="Dashboard" subtitle={`Welcome back, ${session?.user.name}`}>
 			<div className="bg-white/40 backdrop-blur-lg p-8 rounded-2xl shadow-lg border border-white/50 max-w-2xl">
@@ -16,6 +29,12 @@ export default function Dashboard() {
 						<span className="font-medium">Account Status:</span> Active
 					</p>
 				</div>
+				<button
+					onClick={testJWT}
+					className="mt-4 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 px-4 rounded-lg"
+				>
+					Test JWT Token
+				</button>
 			</div>
 		</Layout>
 	);
