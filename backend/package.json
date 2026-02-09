@@ -5,15 +5,18 @@
     "dev": "bun --watch src/index.ts",
     "build": "bun build src/index.ts --outdir ./dist --target bun",
     "start": "bun run dist/index.js",
-    "migrate": "./node_modules/.bin/better-auth migrate"
+    "migrate": "./node_modules/.bin/better-auth migrate",
+    "migrate:kysely": "bun run src/db/migrate.ts"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.4.16",
+    "@hono/zod-openapi": "^1.2.1",
     "better-auth": "^1.4.15",
     "hono": "^4.11.4",
     "kysely": "^0.28.10",
     "pg": "^8.17.1",
-    "resend": "^6.8.0"
+    "resend": "^6.8.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@better-auth/cli": "^1.4.16",

@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { auth } from './lib/auth.js'
+import apiKeyRoutes from './routes/apikey.routes.js'
 
 const app = new Hono()
 
@@ -21,6 +22,9 @@ app.get('/health', (c) => {
 app.on(['POST', 'GET'], '/api/auth/**', (c) => {
   return auth.handler(c.req.raw)
 })
+
+// API Key routes
+app.route('/api/apikey', apiKeyRoutes)
 
 // Custom API: Get user accounts
 app.get('/api/user/accounts', async (c) => {

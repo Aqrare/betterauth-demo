@@ -43,6 +43,20 @@ export default function Settings() {
 	const [deletingPasskeyId, setDeletingPasskeyId] = useState<string | null>(null);
 	const [deleteTwoFactorCode, setDeleteTwoFactorCode] = useState("");
 
+	// API Key関連の状態
+	const [showAddApiKeyForm, setShowAddApiKeyForm] = useState(false);
+	const [apiKeyName, setApiKeyName] = useState("");
+	const [apiKeyExpiresIn, setApiKeyExpiresIn] = useState("30");
+	const [apiKeyPermissions, setApiKeyPermissions] = useState<string[]>([]);
+	const [apiKeyError, setApiKeyError] = useState("");
+	const [apiKeySuccess, setApiKeySuccess] = useState("");
+	const [apiKeyLoading, setApiKeyLoading] = useState(false);
+	const [apiKeys, setApiKeys] = useState<any[]>([]);
+	const [apiKeyListLoading, setApiKeyListLoading] = useState(false);
+	const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
+	const [keyCopied, setKeyCopied] = useState(false);
+	const [deletingApiKeyId, setDeletingApiKeyId] = useState<string | null>(null);
+
 	// パスキー一覧を取得
 	const fetchPasskeys = async () => {
 		setPasskeyListLoading(true);
@@ -55,6 +69,24 @@ export default function Settings() {
 			console.error("Failed to fetch passkeys:", error);
 		} finally {
 			setPasskeyListLoading(false);
+		}
+	};
+
+	// API Key一覧を取得
+	const fetchApiKeys = async () => {
+		setApiKeyListLoading(true);
+		try {
+			const response = await fetch('http://localhost:3000/api/apikey/list', {
+				credentials: 'include',
+			});
+			const result = await response.json();
+			if (result.data) {
+				setApiKeys(result.data);
+			}
+		} catch (error) {
+			console.error("Failed to fetch API keys:", error);
+		} finally {
+			setApiKeyListLoading(false);
 		}
 	};
 
@@ -106,6 +138,7 @@ export default function Settings() {
 
 	useEffect(() => {
 		fetchPasskeys();
+		fetchApiKeys();
 	}, []);
 
 	const handlePasswordChange = async (e: React.FormEvent) => {
@@ -493,6 +526,96 @@ export default function Settings() {
 			setAccountLinkError("連携解除中にエラーが発生しました");
 		} finally {
 			setAccountLinkLoading(false);
+		}
+	};
+
+	// Permissionトグル処理
+	const handleTogglePermission = (permission: string) => {
+		setApiKeyPermissions(prev =>
+			prev.includes(permission)
+				? prev.filter(p => p !== permission)
+				: [...prev, permission]
+		);
+	};
+
+	// API Keyを作成
+	const handleCreateApiKey = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setApiKeyError("");
+		setApiKeyLoading(true);
+
+		try {
+			const expiresInSeconds = Number.parseInt(apiKeyExpiresIn) * 24 * 60 * 60;
+
+			const response = await fetch('http://localhost:3000/api/apikey/create', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				credentials: 'include',
+				body: JSON.stringify({
+					name: apiKeyName,
+					expiresIn: expiresInSeconds,
+					permissions: apiKeyPermissions,
+				}),
+			});
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				setApiKeyError(result.error || "API Keyの作成に失敗しました");
+			} else if (result.data) {
+				setApiKeySuccess("API Keyを作成しました。このキーは一度しか表示されません。");
+				setNewlyCreatedKey(result.data.key);
+				setShowAddApiKeyForm(false);
+				setApiKeyName("");
+				setApiKeyExpiresIn("30");
+				setApiKeyPermissions([]);
+				await fetchApiKeys();
+				setTimeout(() => setApiKeySuccess(""), 10000);
+			}
+		} catch (error) {
+			setApiKeyError("API Keyの作成中にエラーが発生しました");
+		} finally {
+			setApiKeyLoading(false);
+		}
+	};
+
+	// API Keyをコピー
+	const handleCopyApiKey = () => {
+		if (newlyCreatedKey) {
+			navigator.clipboard.writeText(newlyCreatedKey).then(() => {
+				setKeyCopied(true);
+				setTimeout(() => setKeyCopied(false), 3000);
+			});
+		}
+	};
+
+	// API Keyを削除
+	const handleDeleteApiKey = async (keyId: string) => {
+		setApiKeyError("");
+		setApiKeyLoading(true);
+
+		try {
+			const response = await fetch(`http://localhost:3000/api/apikey/${keyId}`, {
+				method: 'DELETE',
+				credentials: 'include',
+			});
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				setApiKeyError(result.error || "API Keyの削除に失敗しました");
+			} else {
+				setApiKeySuccess("API Keyを削除しました");
+				setDeletingApiKeyId(null);
+				await fetchApiKeys();
+				setTimeout(() => setApiKeySuccess(""), 5000);
+			}
+		} catch (error) {
+			setApiKeyError("API Keyの削除中にエラーが発生しました");
+		} finally {
+			setApiKeyLoading(false);
 		}
 	};
 
@@ -1211,6 +1334,282 @@ export default function Settings() {
                 </div>
               )}
             </div>
+          </div>
+        </Section>
+
+        {/* API Keys Section */}
+        <Section title="API Keys">
+          <div className="space-y-4">
+            {apiKeyError && <ErrorMessage message={apiKeyError} />}
+            {apiKeySuccess && <SuccessMessage>{apiKeySuccess}</SuccessMessage>}
+
+            {/* 新しく作成されたキーを表示 */}
+            {newlyCreatedKey && (
+              <div className="p-4 bg-amber-50/60 rounded-xl border-2 border-amber-300">
+                <div className="flex items-start gap-3 mb-3">
+                  <svg className="w-5 h-5 text-amber-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="font-bold text-amber-900 mb-1">重要: API Keyを保存してください</p>
+                    <p className="text-sm text-amber-800 mb-3">
+                      このキーは一度しか表示されません。安全な場所に保管してください。
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-white/80 rounded-lg font-mono text-sm mb-4 border border-amber-200 break-all">
+                  {newlyCreatedKey}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={handleCopyApiKey} variant="primary">
+                    {keyCopied ? "コピーしました ✓" : "コピー"}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setNewlyCreatedKey(null);
+                      setKeyCopied(false);
+                    }}
+                    variant="secondary"
+                  >
+                    閉じる
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="p-4 bg-white/30 rounded-xl">
+              <div className="mb-4">
+                <p className="text-sm text-cyan-900 mb-2">
+                  API Keyを使用すると、プログラムからアプリケーションにアクセスできます。
+                  各キーには名前と有効期限を設定できます。
+                </p>
+              </div>
+
+              {!showAddApiKeyForm ? (
+                <Button onClick={() => setShowAddApiKeyForm(true)}>
+                  API Keyを作成
+                </Button>
+              ) : (
+                <form onSubmit={handleCreateApiKey} className="space-y-4">
+                  <InputField
+                    label="API Key名"
+                    type="text"
+                    value={apiKeyName}
+                    onChange={setApiKeyName}
+                    placeholder="例: Production API, Development Key"
+                    required
+                  />
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-cyan-900">
+                      有効期限（日数）
+                    </label>
+                    <select
+                      value={apiKeyExpiresIn}
+                      onChange={(e) => setApiKeyExpiresIn(e.target.value)}
+                      className="w-full px-4 py-2 rounded-xl border-2 border-cyan-200 bg-white focus:border-cyan-400 focus:outline-none"
+                      required
+                    >
+                      <option value="7">7日</option>
+                      <option value="30">30日</option>
+                      <option value="60">60日</option>
+                      <option value="90">90日</option>
+                      <option value="180">180日</option>
+                      <option value="365">365日</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-cyan-900 mb-2">
+                      Permissions（権限）
+                    </label>
+                    <div className="p-4 bg-white/40 rounded-xl border-2 border-cyan-200 space-y-3">
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={apiKeyPermissions.includes('read:resources')}
+                          onChange={() => handleTogglePermission('read:resources')}
+                          className="mt-1 w-4 h-4 text-cyan-600 border-cyan-300 rounded focus:ring-cyan-500"
+                        />
+                        <div className="flex-1">
+                          <span className="font-medium text-cyan-900">read:resources</span>
+                          <p className="text-xs text-cyan-700 mt-0.5">
+                            リソースの読み取り権限（GET /api/apikey/resources）
+                          </p>
+                        </div>
+                      </label>
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={apiKeyPermissions.includes('write:resources')}
+                          onChange={() => handleTogglePermission('write:resources')}
+                          className="mt-1 w-4 h-4 text-cyan-600 border-cyan-300 rounded focus:ring-cyan-500"
+                        />
+                        <div className="flex-1">
+                          <span className="font-medium text-cyan-900">write:resources</span>
+                          <p className="text-xs text-cyan-700 mt-0.5">
+                            リソースの書き込み権限（POST /api/apikey/resources）
+                          </p>
+                        </div>
+                      </label>
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={apiKeyPermissions.includes('admin:resources')}
+                          onChange={() => handleTogglePermission('admin:resources')}
+                          className="mt-1 w-4 h-4 text-cyan-600 border-cyan-300 rounded focus:ring-cyan-500"
+                        />
+                        <div className="flex-1">
+                          <span className="font-medium text-cyan-900">admin:resources</span>
+                          <p className="text-xs text-cyan-700 mt-0.5">
+                            リソースの管理権限（DELETE /api/apikey/resources/:id）
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                    <p className="text-xs text-cyan-700 mt-2">
+                      選択したpermissionsに基づいて、API Keyのアクセス権限が制限されます。
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={apiKeyLoading}>
+                      {apiKeyLoading ? "作成中..." : "API Keyを作成"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        setShowAddApiKeyForm(false);
+                        setApiKeyName("");
+                        setApiKeyExpiresIn("30");
+                        setApiKeyPermissions([]);
+                        setApiKeyError("");
+                      }}
+                    >
+                      キャンセル
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {/* 登録済みAPI Key一覧 */}
+            {apiKeyListLoading ? (
+              <div className="p-4 bg-white/30 rounded-xl text-center text-cyan-800">
+                読み込み中...
+              </div>
+            ) : apiKeys.length > 0 ? (
+              <div className="p-4 bg-white/30 rounded-xl">
+                <p className="font-medium text-cyan-900 mb-3">登録済みAPI Keys</p>
+                <div className="space-y-2">
+                  {apiKeys.map((apiKey) => {
+                    const isExpired = apiKey.expiresAt && new Date(apiKey.expiresAt) < new Date();
+                    return (
+                      <div
+                        key={apiKey.id}
+                        className="p-3 bg-white/40 rounded-lg"
+                      >
+                        {deletingApiKeyId === apiKey.id ? (
+                          // 削除確認モード
+                          <div className="space-y-3">
+                            <div className="p-3 bg-red-50/60 rounded-lg border border-red-200">
+                              <p className="font-medium text-red-900 mb-2">API Keyの削除</p>
+                              <p className="text-sm text-red-800 mb-3">
+                                「{apiKey.name}」を削除してもよろしいですか？
+                              </p>
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={() => handleDeleteApiKey(apiKey.id)}
+                                  variant="danger"
+                                  disabled={apiKeyLoading}
+                                >
+                                  {apiKeyLoading ? "削除中..." : "削除"}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  onClick={() => {
+                                    setDeletingApiKeyId(null);
+                                    setApiKeyError("");
+                                  }}
+                                >
+                                  キャンセル
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          // 通常表示モード
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-medium text-cyan-900">{apiKey.name}</p>
+                                {isExpired && (
+                                  <span className="text-xs px-2 py-0.5 bg-red-100 text-red-800 rounded">
+                                    期限切れ
+                                  </span>
+                                )}
+                                {!apiKey.enabled && (
+                                  <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-800 rounded">
+                                    無効
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-cyan-700 font-mono">
+                                {apiKey.prefix}{"*".repeat(32)}
+                              </p>
+                              <p className="text-xs text-cyan-700 mt-1">
+                                作成日: {new Date(apiKey.createdAt).toLocaleDateString('ja-JP')}
+                                {apiKey.expiresAt && (
+                                  <> • 有効期限: {new Date(apiKey.expiresAt).toLocaleDateString('ja-JP')}</>
+                                )}
+                              </p>
+                              {apiKey.permissions && (() => {
+                                try {
+                                  const permissions = typeof apiKey.permissions === 'string'
+                                    ? JSON.parse(apiKey.permissions)
+                                    : apiKey.permissions;
+                                  return permissions.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                      {permissions.map((perm: string, idx: number) => (
+                                        <span
+                                          key={idx}
+                                          className="text-xs px-2 py-0.5 bg-cyan-100 text-cyan-800 rounded font-mono"
+                                        >
+                                          {perm}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  );
+                                } catch {
+                                  return null;
+                                }
+                              })()}
+                            </div>
+                            <button
+                              onClick={() => setDeletingApiKeyId(apiKey.id)}
+                              disabled={apiKeyLoading}
+                              className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed p-1"
+                              title="削除"
+                            >
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              !showAddApiKeyForm && (
+                <div className="p-4 bg-white/30 rounded-xl text-center text-cyan-800 text-sm">
+                  登録済みのAPI Keyはありません
+                </div>
+              )
+            )}
           </div>
         </Section>
 

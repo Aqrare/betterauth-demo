@@ -4,10 +4,18 @@ import {
   adminClient,
   jwtClient,
   organizationClient,
+  apiKeyClient,
 } from "better-auth/client/plugins";
 import { passkeyClient } from "@better-auth/passkey/client";
 
 export const authClient = createAuthClient({
   baseURL: "http://localhost:3000",
-  plugins: [twoFactorClient(), passkeyClient(), jwtClient(), adminClient(), organizationClient()],
+  plugins: [
+    twoFactorClient(),
+    passkeyClient(),
+    jwtClient(),
+    adminClient(),
+    organizationClient(),
+    apiKeyClient(),
+  ],
 });

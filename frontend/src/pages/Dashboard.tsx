@@ -2,6 +2,7 @@ import { useState } from "react";
 import Layout from "../components/Layout";
 import { authClient } from "../lib/auth";
 import { getJWTToken, testJWTAuth, testAdminAuth } from "../lib/resourceApi";
+import { Button, InputField } from "../components/FormComponents";
 
 // JWTをデコードする関数
 function decodeJWT(token: string) {
@@ -23,6 +24,7 @@ function decodeJWT(token: string) {
 
 export default function Dashboard() {
 	const { data: session } = authClient.useSession();
+	const { data: organizations } = authClient.useListOrganizations();
 	const [testResult, setTestResult] = useState<{
 		type: "success" | "error";
 		message: string;
@@ -144,6 +146,24 @@ export default function Dashboard() {
 		}
 	};
 
+	// 組織を選択してアクティブにする
+	const handleSetActiveOrganization = async (orgId: string) => {
+		setLoading(true);
+		try {
+			await authClient.organization.setActive({
+				organizationId: orgId,
+			});
+			// キャッシュされたトークンをクリア（新しい組織情報でトークンを再取得するため）
+			setCachedToken(null);
+			// ページをリロードしてセッション情報を更新
+			window.location.reload();
+		} catch (error: any) {
+			alert(error.message || "組織の切り替えに失敗しました");
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	// 管理者権限テスト（管理者のみアクセス可能）
 	const handleAdminTest = async () => {
 		setLoading(true);
@@ -191,80 +211,106 @@ export default function Dashboard() {
 
 				{/* 組織情報 */}
 				<div className="bg-purple-50/50 backdrop-blur-sm p-4 rounded-xl border border-purple-200/50 mb-6">
-					<h3 className="font-semibold text-purple-900 mb-2">組織情報</h3>
-					{(session as any)?.activeOrganization ? (
-						<>
-							<p className="text-sm text-purple-800">
-								<span className="font-medium">組織名:</span>{" "}
-								{(session as any).activeOrganization.name}
-							</p>
-							<p className="text-sm text-purple-800 mt-1">
-								<span className="font-medium">組織ID:</span>{" "}
-								{(session as any).activeOrganization.id}
-							</p>
-							<p className="text-sm text-purple-800 mt-1">
-								<span className="font-medium">組織ロール:</span>{" "}
-								{(session as any).activeOrganization.role || "member"}
-							</p>
-						</>
-					) : (
-						<>
-							<p className="text-sm text-purple-700 italic mb-3">
-								組織に所属していません
-							</p>
+					<h3 className="font-semibold text-purple-900 mb-2">所属組織</h3>
 
-							{!showCreateOrg ? (
-								<button
-									onClick={() => setShowCreateOrg(true)}
-									className="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
-								>
-									組織を作成
-								</button>
-							) : (
-								<form onSubmit={handleCreateOrganization} className="space-y-3">
-									<input
-										type="text"
-										value={orgName}
-										onChange={(e) => setOrgName(e.target.value)}
-										placeholder="組織名を入力"
-										className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-										disabled={loading}
-									/>
-									<div className="flex gap-2">
-										<button
-											type="submit"
-											disabled={loading}
-											className="flex-1 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
-										>
-											{loading ? "作成中..." : "作成"}
-										</button>
-										<button
-											type="button"
-											onClick={() => {
-												setShowCreateOrg(false);
-												setOrgName("");
-											}}
-											disabled={loading}
-											className="flex-1 bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
-										>
-											キャンセル
-										</button>
+					{organizations && organizations.length > 0 ? (
+						<div className="space-y-2 mb-3">
+							{organizations.map((org) => {
+								const isActive = (session as any)?.activeOrganization?.id === org.id;
+								console.log(isActive, org.id, (session as any)?.activeOrganization?.id);
+								return (
+									<div
+										key={org.id}
+										className={`p-3 rounded-lg border ${
+											isActive
+												? "bg-purple-100 border-purple-300"
+												: "bg-white/50 border-purple-200"
+										}`}
+									>
+										<div className="flex items-center justify-between gap-3">
+											<div className="flex-1">
+												<p className="text-sm font-medium text-purple-900">
+													{org.name}
+													{isActive && (
+														<span className="ml-2 px-2 py-0.5 text-xs bg-purple-500 text-white rounded">
+															アクティブ
+														</span>
+													)}
+												</p>
+											</div>
+											{!isActive && (
+												<button
+													onClick={() => handleSetActiveOrganization(org.id)}
+													disabled={loading}
+													className="px-3 py-1 text-xs bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white rounded transition-colors"
+												>
+													選択
+												</button>
+											)}
+										</div>
 									</div>
-								</form>
-							)}
-						</>
+								);
+							})}
+						</div>
+					) : (
+						<p className="text-sm text-purple-700 italic mb-3">
+							組織に所属していません
+						</p>
+					)}
+
+					{!showCreateOrg ? (
+						<div className="w-full">
+							<Button
+								onClick={() => setShowCreateOrg(true)}
+								variant="primary"
+							>
+								組織を作成
+							</Button>
+						</div>
+					) : (
+						<form onSubmit={handleCreateOrganization} className="space-y-3">
+							<InputField
+								label=""
+								type="text"
+								value={orgName}
+								onChange={setOrgName}
+								placeholder="組織名を入力"
+								disabled={loading}
+								required
+							/>
+							<div className="flex gap-2">
+								<Button
+									type="submit"
+									disabled={loading}
+									variant="primary"
+								>
+									{loading ? "作成中..." : "作成"}
+								</Button>
+								<Button
+									type="button"
+									onClick={() => {
+										setShowCreateOrg(false);
+										setOrgName("");
+									}}
+									disabled={loading}
+									variant="secondary"
+								>
+									キャンセル
+								</Button>
+							</div>
+						</form>
 					)}
 				</div>
 
 				{/* JWTトークン表示ボタン */}
-				<div className="mb-4">
-					<button
+				<div className="mb-4 w-full">
+					<Button
 						onClick={handleShowJWT}
 						disabled={loading}
-						className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+						variant="primary"
 					>
 						{loading ? "取得中..." : "JWTトークンを取得・表示"}
-					</button>
+					</Button>
 				</div>
 
 				{/* JWT表示エリア */}

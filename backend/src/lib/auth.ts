@@ -6,6 +6,7 @@ import { passkey } from "@better-auth/passkey";
 import { jwt } from "better-auth/plugins";
 import { admin } from "better-auth/plugins";
 import { organization } from "better-auth/plugins";
+import { apiKey } from "better-auth/plugins"
 import { memberRepository } from "../db/repositories/memberRepository.js";
 
 export const auth = betterAuth({
@@ -14,28 +15,36 @@ export const auth = betterAuth({
     twoFactor(),
     passkey(),
     admin(),
-    organization(), // 組織管理プラグインを追加
+    organization(),
+    apiKey({
+      defaultPrefix: "demo_",
+      permissions: {
+        defaultPermissions: {
+          files: ["read"],
+          users: ["read"],
+        },
+      },
+    }),
     jwt({
       jwt: {
         definePayload: async ({ user, session }) => {
-          // アクティブな組織のメンバー情報を取得
           let organizationId = null;
           let organizationRole = null;
 
-          const activeOrganizationId = (session as any)?.activeOrganizationId;
+          const activeOrganizationId = session?.activeOrganizationId;
 
           if (activeOrganizationId) {
             organizationId = activeOrganizationId;
             organizationRole = await memberRepository.getOrganizationRole(
               user.id,
-              activeOrganizationId
+              activeOrganizationId,
             );
           }
 
           return {
             sub: user.id,
-            email: user.email,
             role: user.role || "user",
+            twoFactorEnabled: user.twoFactorEnabled || false,
             organizationId,
             organizationRole,
           };
