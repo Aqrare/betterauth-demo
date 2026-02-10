@@ -10,7 +10,8 @@
 backend/
 ├── src/
 │   ├── controllers/       # リクエストハンドラー
-│   │   └── apikey.controller.ts
+│   │   ├── apikey.controller.ts
+│   │   └── user.controller.ts
 │   ├── db/               # データベース関連
 │   │   ├── index.ts      # DB接続設定
 │   │   ├── migrate.ts    # マイグレーション実行
@@ -24,13 +25,19 @@ backend/
 │   ├── lib/              # ライブラリ・ユーティリティ
 │   │   ├── auth.ts       # Better Auth設定
 │   │   ├── auth-schemas.ts # スキーマ定義
-│   │   └── email.ts      # メール送信
+│   │   ├── email.ts      # メール送信
+│   │   └── errors.ts     # エラークラス定義
+│   ├── middlewares/      # ミドルウェア
+│   │   └── error-handler.ts # 集約エラーハンドリング
 │   ├── repositories/     # リポジトリ層
-│   │   └── apikey.repository.ts
+│   │   ├── apikey.repository.ts
+│   │   └── user.repository.ts
 │   ├── routes/           # ルーティング定義
-│   │   └── apikey.routes.ts
+│   │   ├── apikey.routes.ts
+│   │   └── user.routes.ts
 │   ├── services/         # ビジネスロジック層
-│   │   └── apikey.service.ts
+│   │   ├── apikey.service.ts
+│   │   └── user.service.ts
 │   └── index.ts          # エントリーポイント
 ├── .env                  # 環境変数（ローカル）
 ├── .env.example          # 環境変数テンプレート
@@ -77,6 +84,7 @@ Controller → Service → Repository → Database
 ```
 
 ### 責務分離
+- **Middlewares**: 横断的関心事（エラーハンドリング、認証、ログなど）
 - **Controllers**: HTTPリクエスト/レスポンスの処理
 - **Services**: ビジネスロジックの実装
 - **Repositories**: データアクセスの抽象化
