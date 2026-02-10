@@ -215,7 +215,7 @@ export default function Dashboard() {
 
 					{organizations && organizations.length > 0 ? (
 						<div className="space-y-2 mb-3">
-							{organizations.map((org) => {
+							{organizations.filter(org => org !== null).map((org) => {
 								const isActive = (session as any)?.activeOrganization?.id === org.id;
 								console.log(isActive, org.id, (session as any)?.activeOrganization?.id);
 								return (

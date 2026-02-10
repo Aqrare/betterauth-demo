@@ -1,21 +1,40 @@
-import { betterAuth } from "better-auth"
-import { Pool } from "pg"
-import { sendVerificationEmail, sendPasswordResetEmail } from "./email.js"
+import { betterAuth } from "better-auth";
+import { Pool } from "pg";
+import { PostgresDialect } from "kysely";
+import { sendVerificationEmail, sendPasswordResetEmail } from "./email.js";
 import { twoFactor } from "better-auth/plugins";
 import { passkey } from "@better-auth/passkey";
 import { jwt } from "better-auth/plugins";
 import { admin } from "better-auth/plugins";
 import { organization } from "better-auth/plugins";
-import { apiKey } from "better-auth/plugins"
+import { apiKey } from "better-auth/plugins";
 import { memberRepository } from "../db/repositories/memberRepository.js";
+import {
+  userSchema,
+  sessionSchema,
+  accountSchema,
+  verificationSchema,
+  adminSchema,
+  twoFactorSchema,
+  jwtSchema,
+  passkeySchema,
+  organizationSchema,
+  apiKeySchema,
+} from "./auth-schemas.js";
 
 export const auth = betterAuth({
   appName: "Auth Demo App",
+
+  user: userSchema,
+  session: sessionSchema,
+  account: accountSchema,
+  verification: verificationSchema,
+
   plugins: [
-    twoFactor(),
-    passkey(),
-    admin(),
-    organization(),
+    twoFactor(twoFactorSchema),
+    passkey(passkeySchema),
+    admin(adminSchema),
+    organization(organizationSchema),
     apiKey({
       defaultPrefix: "demo_",
       permissions: {
@@ -24,8 +43,10 @@ export const auth = betterAuth({
           users: ["read"],
         },
       },
+      ...apiKeySchema,
     }),
     jwt({
+      ...jwtSchema,
       jwt: {
         definePayload: async ({ user, session }) => {
           let organizationId = null;
@@ -54,9 +75,22 @@ export const auth = betterAuth({
   ],
 
   // データベース接続設定
-  database: new Pool({
-    connectionString: process.env.DATABASE_URL!,
-  }),
+  database: {
+    dialect: new PostgresDialect({
+      pool: new Pool({
+        connectionString: process.env.DATABASE_URL!,
+      }),
+    }),
+    type: "postgres",
+    casing: "snake",
+  },
+  advanced: {
+    database: {
+      generateId: (options) => {
+        return crypto.randomUUID();
+      },
+    },
+  },
 
   // Email & Passwordプロバイダーを有効化
   emailAndPassword: {
@@ -100,14 +134,6 @@ export const auth = betterAuth({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       prompt: "select_account", // 毎回アカウント選択を表示
-    },
-  },
-
-  // アカウントリンク設定
-  account: {
-    accountLinking: {
-      enabled: true,
-      trustedProviders: ["google"],
     },
   },
 
