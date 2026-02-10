@@ -1,31 +1,5 @@
-/**
- * Better Auth のスキーマ設定
- * すべてのテーブルの snake_case マッピングを定義
- */
+import { toSnakeCaseFields, buildPluginSchema } from './utils.js'
 
-/**
- * camelCase → snake_case 自動変換ヘルパー
- */
-function toSnakeCaseFields<T extends readonly string[]>(
-  keys: T
-): Record<T[number], string> {
-  const toSnakeCase = (str: string) =>
-    str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
-
-  return Object.fromEntries(
-    keys.map((key) => [key, toSnakeCase(key)])
-  ) as any;
-}
-
-/**
- * Plugin Schema ビルダー
- * Plugin のネスト構造を簡潔に記述するためのヘルパー
- */
-function buildPluginSchema<T>(tables: T) {
-  return { schema: tables };
-}
-
-// Core Schema のフィールドマッピング
 export const userSchema = {
   fields: toSnakeCaseFields(["emailVerified", "createdAt", "updatedAt"] as const),
 };
@@ -64,7 +38,6 @@ export const verificationSchema = {
   fields: toSnakeCaseFields(["expiresAt", "createdAt", "updatedAt"] as const),
 };
 
-// Plugin Schema のフィールドマッピング
 export const adminSchema = buildPluginSchema({
   user: {
     fields: toSnakeCaseFields(["banReason", "banExpires"] as const),

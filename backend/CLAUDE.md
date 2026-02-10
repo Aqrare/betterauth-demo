@@ -10,7 +10,8 @@
 backend/
 ├── src/
 │   ├── controllers/       # リクエストハンドラー
-│   │   └── apikey.controller.ts
+│   │   ├── apikey.controller.ts
+│   │   └── user.controller.ts
 │   ├── db/               # データベース関連
 │   │   ├── index.ts      # DB接続設定
 │   │   ├── migrate.ts    # マイグレーション実行
@@ -24,13 +25,20 @@ backend/
 │   ├── lib/              # ライブラリ・ユーティリティ
 │   │   ├── auth.ts       # Better Auth設定
 │   │   ├── auth-schemas.ts # スキーマ定義
-│   │   └── email.ts      # メール送信
+│   │   ├── email.ts      # メール送信
+│   │   ├── errors.ts     # エラークラス定義
+│   │   └── utils.ts      # 汎用ヘルパー関数
+│   ├── middlewares/      # ミドルウェア
+│   │   └── error-handler.ts # 集約エラーハンドリング
 │   ├── repositories/     # リポジトリ層
-│   │   └── apikey.repository.ts
+│   │   ├── apikey.repository.ts
+│   │   └── user.repository.ts
 │   ├── routes/           # ルーティング定義
-│   │   └── apikey.routes.ts
+│   │   ├── apikey.routes.ts
+│   │   └── user.routes.ts
 │   ├── services/         # ビジネスロジック層
-│   │   └── apikey.service.ts
+│   │   ├── apikey.service.ts
+│   │   └── user.service.ts
 │   └── index.ts          # エントリーポイント
 ├── .env                  # 環境変数（ローカル）
 ├── .env.example          # 環境変数テンプレート
@@ -77,6 +85,7 @@ Controller → Service → Repository → Database
 ```
 
 ### 責務分離
+- **Middlewares**: 横断的関心事（エラーハンドリング、認証、ログなど）
 - **Controllers**: HTTPリクエスト/レスポンスの処理
 - **Services**: ビジネスロジックの実装
 - **Repositories**: データアクセスの抽象化
@@ -97,6 +106,7 @@ Controller → Service → Repository → Database
 #### 1. 型安全とコード品質
 
 - **`any` の原則禁止**:
+  - **例外**: `Kysely<any>` はマイグレーションファイルで許可
 - **厳格な Null チェック**: `?.` と `??` を活用し、null/undefined エラーを防ぐ
 - **Enum より Union Type**: `type Status = "pending" | "success"` を優先
 - **Readonly の活用**: 変更不要なオブジェクト・配列には `readonly` を付与
@@ -132,6 +142,7 @@ Controller → Service → Repository → Database
 - **副作用の分離**: ビジネスロジックは純粋関数に。DB・API呼び出しは外側の層へ
 - **Early Return**: 例外ケースは関数冒頭で `return`/`throw` し、メインロジックをフラットに
 - **関数合成**: 複雑な処理は小さな単機能関数を組み合わせて構築
+- **1行条件文の簡潔化**: 単一文の条件は中括弧を省略（`if (!session) throw new Error()`）
 
 ### ファイル命名規則
 

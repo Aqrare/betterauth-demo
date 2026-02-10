@@ -49,23 +49,20 @@ export const auth = betterAuth({
       ...jwtSchema,
       jwt: {
         definePayload: async ({ user, session }) => {
-          let organizationId = null;
-          let organizationRole = null;
-
           const activeOrganizationId = session?.activeOrganizationId;
 
-          if (activeOrganizationId) {
-            organizationId = activeOrganizationId;
-            organizationRole = await memberRepository.getOrganizationRole(
-              user.id,
-              activeOrganizationId,
-            );
-          }
+          const organizationId = activeOrganizationId ?? null;
+          const organizationRole = activeOrganizationId
+            ? await memberRepository.getOrganizationRole(
+                user.id,
+                activeOrganizationId
+              )
+            : null;
 
           return {
             sub: user.id,
-            role: user.role || "user",
-            twoFactorEnabled: user.twoFactorEnabled || false,
+            role: user.role ?? "user",
+            twoFactorEnabled: user.twoFactorEnabled ?? false,
             organizationId,
             organizationRole,
           };
@@ -74,7 +71,6 @@ export const auth = betterAuth({
     }),
   ],
 
-  // データベース接続設定
   database: {
     dialect: new PostgresDialect({
       pool: new Pool({
@@ -86,17 +82,16 @@ export const auth = betterAuth({
   },
   advanced: {
     database: {
-      generateId: (options) => {
+      generateId: () => {
         return crypto.randomUUID();
       },
     },
   },
 
-  // Email & Passwordプロバイダーを有効化
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    sendResetPassword: async ({ user, url, token }) => {
+    sendResetPassword: async ({ user, url }) => {
       void sendPasswordResetEmail({
         to: user.email,
         url,
@@ -108,9 +103,8 @@ export const auth = betterAuth({
     },
   },
 
-  // メール認証設定
   emailVerification: {
-    sendVerificationEmail: async ({ user, url, token }) => {
+    sendVerificationEmail: async ({ user, url }) => {
       // 認証完了後のリダイレクト先をURLに追加
       const urlWithCallback = new URL(url);
       urlWithCallback.searchParams.set(
@@ -124,11 +118,10 @@ export const auth = betterAuth({
         userName: user.name,
       });
     },
-    sendOnSignUp: true, // サインアップ時に自動送信
-    autoSignInAfterVerification: true, // 認証後自動ログイン
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
   },
 
-  // ソーシャルログインプロバイダー
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -137,10 +130,7 @@ export const auth = betterAuth({
     },
   },
 
-  // アプリケーションの基本設定
   secret: process.env.BETTER_AUTH_SECRET!,
   baseURL: process.env.BETTER_AUTH_URL!,
-
-  // フロントエンドからのアクセスを許可
   trustedOrigins: ["http://localhost:5173"],
 });

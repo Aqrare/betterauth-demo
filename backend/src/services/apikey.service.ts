@@ -4,18 +4,18 @@ import type { CreateApiKeyRequest } from '../dtos/apikey.dto.js'
 
 export class ApiKeyService {
   async create(userId: string, organizationId: string | null, params: CreateApiKeyRequest) {
-    const permissionsObj: Record<string, string[]> = {}
-    if (params.permissions && params.permissions.length > 0) {
-      for (const perm of params.permissions) {
+    const permissionsObj: Record<string, string[]> = (params.permissions ?? []).reduce(
+      (acc, perm) => {
         const [action, resource] = perm.split(':')
-        if (resource) {
-          if (!permissionsObj[resource]) {
-            permissionsObj[resource] = []
-          }
-          permissionsObj[resource].push(action)
+        if (!resource) return acc
+
+        return {
+          ...acc,
+          [resource]: [...(acc[resource] ?? []), action],
         }
-      }
-    }
+      },
+      {} as Record<string, string[]>
+    )
 
     const result = await auth.api.createApiKey({
       body: {
@@ -26,9 +26,7 @@ export class ApiKeyService {
       },
     })
 
-    if (!result || !result.id) {
-      throw new Error('Failed to create API key')
-    }
+    if (!result || !result.id) throw new Error('Failed to create API key')
 
     const updatedKey = await apiKeyRepository.setOrganizationId(result.id, organizationId)
 
@@ -39,9 +37,7 @@ export class ApiKeyService {
   }
 
   async list(userId: string, organizationId: string | null) {
-    if (organizationId) {
-      return apiKeyRepository.findByOrganizationId(organizationId)
-    }
+    if (organizationId) return apiKeyRepository.findByOrganizationId(organizationId)
     return apiKeyRepository.findByUserId(userId)
   }
 
@@ -66,28 +62,29 @@ export class ApiKeyService {
 
       const apiKeyData = result.key
 
-      let permissions: string[] = []
-      if (apiKeyData.permissions) {
+      const permissions: string[] = (() => {
+        if (!apiKeyData.permissions) return []
+
         try {
           const permsObj = typeof apiKeyData.permissions === 'string'
             ? JSON.parse(apiKeyData.permissions)
             : apiKeyData.permissions
 
-          if (typeof permsObj === 'object' && !Array.isArray(permsObj)) {
-            for (const [resource, actions] of Object.entries(permsObj)) {
-              if (Array.isArray(actions)) {
-                for (const action of actions) {
-                  permissions.push(`${action}:${resource}`)
-                }
-              }
-            }
-          } else if (Array.isArray(permsObj)) {
-            permissions = permsObj
+          if (Array.isArray(permsObj)) return permsObj
+
+          if (typeof permsObj === 'object') {
+            return Object.entries(permsObj).flatMap(([resource, actions]) =>
+              Array.isArray(actions)
+                ? actions.map(action => `${action}:${resource}`)
+                : []
+            )
           }
+
+          return []
         } catch {
-          permissions = []
+          return []
         }
-      }
+      })()
 
       const keyDetails = apiKeyData.prefix
         ? await apiKeyRepository.findByPrefix(apiKeyData.prefix)
