@@ -1,15 +1,6 @@
 import { db } from '../db/index.js'
 
-/**
- * User Repository
- * ユーザー情報のデータアクセス層
- */
 export class UserRepository {
-  /**
-   * ユーザーに紐づくアカウント（OAuth連携）のプロバイダーIDを取得
-   * @param userId ユーザーID
-   * @returns プロバイダーID配列
-   */
   async getAccountProviders(userId: string): Promise<string[]> {
     const accounts = await db
       .selectFrom('account')

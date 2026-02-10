@@ -7,21 +7,17 @@ import userRoutes from './routes/user.routes.js'
 
 const app = new Hono()
 
-// ミドルウェア
 app.onError(errorHandler)
 app.use('/*', cors({
   origin: 'http://localhost:5173',
   credentials: true,
 }))
 
-// ヘルスチェック
 app.get('/', (c) => c.json({ message: 'Auth Demo API' }))
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
-// 認証エンドポイント
 app.on(['POST', 'GET'], '/api/auth/**', (c) => auth.handler(c.req.raw))
 
-// APIルート
 app.route('/api/apikey', apiKeyRoutes)
 app.route('/api/user', userRoutes)
 

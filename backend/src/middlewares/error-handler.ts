@@ -7,7 +7,6 @@ import { ZodError } from 'zod'
  * すべてのエラーを統一的に処理し、適切なHTTPレスポンスに変換
  */
 export const errorHandler = (err: Error, c: Context) => {
-  // カスタムエラー
   if (err instanceof AppError) {
     return c.json(
       {
@@ -18,7 +17,6 @@ export const errorHandler = (err: Error, c: Context) => {
     )
   }
 
-  // Zod バリデーションエラー
   if (err instanceof ZodError) {
     return c.json(
       {
@@ -30,7 +28,6 @@ export const errorHandler = (err: Error, c: Context) => {
     )
   }
 
-  // 予期しないエラー
   console.error('Unexpected error:', err)
   return c.json(
     {

@@ -46,10 +46,7 @@ export class ApiKeyController {
     return c.json({ success: true })
   }
 
-  /**
-   * API Keyを検証してpermissionsを返す
-   * Resource MSから呼び出される
-   */
+  // Resource MSから呼び出される
   async verify(c: Context) {
     const body = await c.req.json<VerifyApiKeyRequest>()
 

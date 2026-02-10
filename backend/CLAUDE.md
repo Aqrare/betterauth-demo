@@ -26,7 +26,8 @@ backend/
 │   │   ├── auth.ts       # Better Auth設定
 │   │   ├── auth-schemas.ts # スキーマ定義
 │   │   ├── email.ts      # メール送信
-│   │   └── errors.ts     # エラークラス定義
+│   │   ├── errors.ts     # エラークラス定義
+│   │   └── utils.ts      # 汎用ヘルパー関数
 │   ├── middlewares/      # ミドルウェア
 │   │   └── error-handler.ts # 集約エラーハンドリング
 │   ├── repositories/     # リポジトリ層

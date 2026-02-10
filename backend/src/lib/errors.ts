@@ -2,10 +2,6 @@
  * アプリケーションエラークラス
  * 統一的なエラーハンドリングのための基底クラス
  */
-
-/**
- * アプリケーションの基底エラークラス
- */
 export class AppError extends Error {
   constructor(
     message: string,
@@ -18,9 +14,6 @@ export class AppError extends Error {
   }
 }
 
-/**
- * 認証エラー (401)
- */
 export class UnauthorizedError extends AppError {
   constructor(message = 'Unauthorized') {
     super(message, 401, 'UNAUTHORIZED')
@@ -28,9 +21,6 @@ export class UnauthorizedError extends AppError {
   }
 }
 
-/**
- * バリデーションエラー (400)
- */
 export class BadRequestError extends AppError {
   constructor(message: string) {
     super(message, 400, 'BAD_REQUEST')
@@ -38,9 +28,6 @@ export class BadRequestError extends AppError {
   }
 }
 
-/**
- * リソース未検出エラー (404)
- */
 export class NotFoundError extends AppError {
   constructor(message = 'Resource not found') {
     super(message, 404, 'NOT_FOUND')
@@ -48,9 +35,6 @@ export class NotFoundError extends AppError {
   }
 }
 
-/**
- * 禁止エラー (403)
- */
 export class ForbiddenError extends AppError {
   constructor(message = 'Forbidden') {
     super(message, 403, 'FORBIDDEN')
@@ -58,9 +42,6 @@ export class ForbiddenError extends AppError {
   }
 }
 
-/**
- * 内部サーバーエラー (500)
- */
 export class InternalServerError extends AppError {
   constructor(message = 'Internal Server Error') {
     super(message, 500, 'INTERNAL_SERVER_ERROR')

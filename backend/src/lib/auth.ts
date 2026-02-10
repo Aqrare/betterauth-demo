@@ -71,7 +71,6 @@ export const auth = betterAuth({
     }),
   ],
 
-  // データベース接続設定
   database: {
     dialect: new PostgresDialect({
       pool: new Pool({
@@ -89,7 +88,6 @@ export const auth = betterAuth({
     },
   },
 
-  // Email & Passwordプロバイダーを有効化
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
@@ -105,7 +103,6 @@ export const auth = betterAuth({
     },
   },
 
-  // メール認証設定
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
       // 認証完了後のリダイレクト先をURLに追加
@@ -121,11 +118,10 @@ export const auth = betterAuth({
         userName: user.name,
       });
     },
-    sendOnSignUp: true, // サインアップ時に自動送信
-    autoSignInAfterVerification: true, // 認証後自動ログイン
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
   },
 
-  // ソーシャルログインプロバイダー
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -134,10 +130,7 @@ export const auth = betterAuth({
     },
   },
 
-  // アプリケーションの基本設定
   secret: process.env.BETTER_AUTH_SECRET!,
   baseURL: process.env.BETTER_AUTH_URL!,
-
-  // フロントエンドからのアクセスを許可
   trustedOrigins: ["http://localhost:5173"],
 });
