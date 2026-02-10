@@ -1,13 +1,12 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: auth-demo-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: auth_demo
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -22,9 +21,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: auth-demo-backend
     ports:
-      - "3000:3000"
+      - "${BACKEND_PORT:-3000}:3000"
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -45,9 +43,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: auth-demo-frontend
     ports:
-      - "5173:5173"
+      - "${FRONTEND_PORT:-5173}:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -63,9 +60,8 @@ services:
     build:
       context: ./resource-ms
       dockerfile: Dockerfile
-    container_name: auth-demo-resource-ms
     ports:
-      - "4001:4001"
+      - "${RESOURCE_MS_PORT:-4001}:4001"
     volumes:
       - ./resource-ms:/app
       - /app/node_modules
@@ -78,6 +74,23 @@ services:
     networks:
       - auth-demo-network
     command: bun --watch src/index.ts
+
+  opa:
+    image: openpolicyagent/opa:latest
+    ports:
+      - "${OPA_PORT:-8181}:8181"
+    volumes:
+      - ./opa/policies:/policies
+      - ./opa/data:/data
+    networks:
+      - auth-demo-network
+    command:
+      - "run"
+      - "--server"
+      - "--addr=0.0.0.0:8181"
+      - "--log-level=debug"
+      - "--watch"
+      - "/policies"
 
 volumes:
   postgres-data:
