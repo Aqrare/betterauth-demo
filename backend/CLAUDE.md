@@ -97,6 +97,7 @@ Controller → Service → Repository → Database
 #### 1. 型安全とコード品質
 
 - **`any` の原則禁止**:
+  - **例外**: `Kysely<any>` はマイグレーションファイルで許可
 - **厳格な Null チェック**: `?.` と `??` を活用し、null/undefined エラーを防ぐ
 - **Enum より Union Type**: `type Status = "pending" | "success"` を優先
 - **Readonly の活用**: 変更不要なオブジェクト・配列には `readonly` を付与
@@ -132,6 +133,7 @@ Controller → Service → Repository → Database
 - **副作用の分離**: ビジネスロジックは純粋関数に。DB・API呼び出しは外側の層へ
 - **Early Return**: 例外ケースは関数冒頭で `return`/`throw` し、メインロジックをフラットに
 - **関数合成**: 複雑な処理は小さな単機能関数を組み合わせて構築
+- **1行条件文の簡潔化**: 単一文の条件は中括弧を省略（`if (!session) throw new Error()`）
 
 ### ファイル命名規則
 

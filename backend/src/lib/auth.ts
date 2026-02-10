@@ -49,23 +49,20 @@ export const auth = betterAuth({
       ...jwtSchema,
       jwt: {
         definePayload: async ({ user, session }) => {
-          let organizationId = null;
-          let organizationRole = null;
-
           const activeOrganizationId = session?.activeOrganizationId;
 
-          if (activeOrganizationId) {
-            organizationId = activeOrganizationId;
-            organizationRole = await memberRepository.getOrganizationRole(
-              user.id,
-              activeOrganizationId,
-            );
-          }
+          const organizationId = activeOrganizationId ?? null;
+          const organizationRole = activeOrganizationId
+            ? await memberRepository.getOrganizationRole(
+                user.id,
+                activeOrganizationId
+              )
+            : null;
 
           return {
             sub: user.id,
-            role: user.role || "user",
-            twoFactorEnabled: user.twoFactorEnabled || false,
+            role: user.role ?? "user",
+            twoFactorEnabled: user.twoFactorEnabled ?? false,
             organizationId,
             organizationRole,
           };
@@ -86,7 +83,7 @@ export const auth = betterAuth({
   },
   advanced: {
     database: {
-      generateId: (options) => {
+      generateId: () => {
         return crypto.randomUUID();
       },
     },
@@ -96,7 +93,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    sendResetPassword: async ({ user, url, token }) => {
+    sendResetPassword: async ({ user, url }) => {
       void sendPasswordResetEmail({
         to: user.email,
         url,
@@ -110,7 +107,7 @@ export const auth = betterAuth({
 
   // メール認証設定
   emailVerification: {
-    sendVerificationEmail: async ({ user, url, token }) => {
+    sendVerificationEmail: async ({ user, url }) => {
       // 認証完了後のリダイレクト先をURLに追加
       const urlWithCallback = new URL(url);
       urlWithCallback.searchParams.set(

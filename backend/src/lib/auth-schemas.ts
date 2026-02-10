@@ -14,7 +14,7 @@ function toSnakeCaseFields<T extends readonly string[]>(
 
   return Object.fromEntries(
     keys.map((key) => [key, toSnakeCase(key)])
-  ) as any;
+  ) as Record<T[number], string>;
 }
 
 /**
