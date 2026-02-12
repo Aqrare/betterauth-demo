@@ -49,13 +49,12 @@ export const auth = betterAuth({
       ...jwtSchema,
       jwt: {
         definePayload: async ({ user, session }) => {
-          const activeOrganizationId = session?.activeOrganizationId;
-
-          const organizationId = activeOrganizationId ?? null;
-          const organizationRole = activeOrganizationId
+          const activeServiceId = session?.activeOrganizationId;
+          const serviceId = activeServiceId ?? null;
+          const organizationRole = activeServiceId
             ? await memberRepository.getOrganizationRole(
                 user.id,
-                activeOrganizationId
+                activeServiceId
               )
             : null;
 
@@ -63,7 +62,7 @@ export const auth = betterAuth({
             sub: user.id,
             role: user.role ?? "user",
             twoFactorEnabled: user.twoFactorEnabled ?? false,
-            organizationId,
+            serviceId,
             organizationRole,
           };
         },
@@ -132,5 +131,5 @@ export const auth = betterAuth({
 
   secret: process.env.BETTER_AUTH_SECRET!,
   baseURL: process.env.BETTER_AUTH_URL!,
-  trustedOrigins: ["http://localhost:5173"],
+  trustedOrigins: [process.env.FRONTEND_URL || ""],
 });

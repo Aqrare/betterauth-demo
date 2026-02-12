@@ -9,8 +9,8 @@ export class MemberRepository {
       const result = await db
         .selectFrom('member')
         .select('role')
-        .where('userId', '=', userId)
-        .where('organizationId', '=', organizationId)
+        .where('user_id', '=', userId)
+        .where('service_id', '=', organizationId)
         .executeTakeFirst()
 
       return result?.role ?? null

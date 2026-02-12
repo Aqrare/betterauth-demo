@@ -29,9 +29,10 @@ services:
     env_file:
       - ./backend/.env
     environment:
+      PORT: 3000
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/auth_demo
-      BETTER_AUTH_URL: http://localhost:3000
-      FRONTEND_URL: http://localhost:5173
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,6 +69,7 @@ services:
     environment:
       PORT: 4001
       AUTH_MS_URL: http://backend:3000
+      OPA_URL: http://opa:8181
       NODE_ENV: development
     depends_on:
       - backend

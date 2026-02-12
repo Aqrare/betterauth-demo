@@ -60,7 +60,7 @@ export default function Login() {
 	const handleGoogleLogin = async () => {
 		await authClient.signIn.social({
 			provider: "google",
-			callbackURL: "http://localhost:5173/dashboard",
+			callbackURL: `${import.meta.env.VITE_FRONTEND_URL || ""}/dashboard`,
 		});
 	};
 
