@@ -93,7 +93,7 @@ export class ApiKeyService {
       return {
         valid: true,
         userId: apiKeyData.userId,
-        organizationId: keyDetails?.organizationId || null,
+        organizationId: keyDetails?.organization_id || null,
         permissions,
       }
     } catch (error) {

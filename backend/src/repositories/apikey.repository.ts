@@ -4,7 +4,7 @@ export class ApiKeyRepository {
   async setOrganizationId(keyId: string, organizationId: string | null) {
     return db
       .updateTable('apikey')
-      .set({ organizationId })
+      .set({ organization_id: organizationId })
       .where('id', '=', keyId)
       .returningAll()
       .executeTakeFirst()
@@ -14,8 +14,8 @@ export class ApiKeyRepository {
     return db
       .selectFrom('apikey')
       .selectAll()
-      .where('organizationId', '=', organizationId)
-      .orderBy('createdAt', 'desc')
+      .where('organization_id', '=', organizationId)
+      .orderBy('created_at', 'desc')
       .execute()
   }
 
@@ -23,9 +23,9 @@ export class ApiKeyRepository {
     return db
       .selectFrom('apikey')
       .selectAll()
-      .where('userId', '=', userId)
-      .where('organizationId', 'is', null)
-      .orderBy('createdAt', 'desc')
+      .where('user_id', '=', userId)
+      .where('organization_id', 'is', null)
+      .orderBy('created_at', 'desc')
       .execute()
   }
 

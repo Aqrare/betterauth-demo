@@ -4,11 +4,11 @@ export class UserRepository {
   async getAccountProviders(userId: string): Promise<string[]> {
     const accounts = await db
       .selectFrom('account')
-      .select('providerId')
-      .where('userId', '=', userId)
+      .select('provider_id')
+      .where('user_id', '=', userId)
       .execute()
 
-    return accounts.map(account => account.providerId)
+    return accounts.map(account => account.provider_id)
   }
 }
 
