@@ -1,15 +1,12 @@
-/**
- * Resource MS APIクライアント
- */
 
-const RESOURCE_MS_URL = import.meta.env.VITE_RESOURCE_MS_URL || 'http://localhost:4001'
 
-/**
- * JWTトークンを取得
- */
+const RESOURCE_MS_URL = import.meta.env.VITE_RESOURCE_MS_URL || ''
+const AUTH_URL = import.meta.env.VITE_AUTH_URL || ''
+
+
 export async function getJWTToken(): Promise<string | null> {
   try {
-    const response = await fetch('http://localhost:3000/api/auth/token', {
+    const response = await fetch(`${AUTH_URL}/api/auth/token`, {
       credentials: 'include', // Cookieを含める
     })
 
@@ -25,9 +22,6 @@ export async function getJWTToken(): Promise<string | null> {
   }
 }
 
-/**
- * JWT認証テスト（一般ユーザーでもアクセス可能）
- */
 export async function testJWTAuth(token: string) {
   const response = await fetch(`${RESOURCE_MS_URL}/api/test`, {
     headers: {
@@ -43,9 +37,6 @@ export async function testJWTAuth(token: string) {
   return await response.json()
 }
 
-/**
- * 管理者権限テスト（管理者のみアクセス可能）
- */
 export async function testAdminAuth(token: string) {
   const response = await fetch(`${RESOURCE_MS_URL}/api/admin/test`, {
     headers: {

@@ -4,35 +4,35 @@
 
 export interface MemberTable {
   id: string
-  organizationId: string
-  userId: string
+  service_id: string
+  user_id: string
   role: 'owner' | 'admin' | 'member'
-  createdAt: Date
+  created_at: Date
 }
 
 export interface ApiKeyTable {
   id: string
   name: string
   key: string
-  userId: string
-  organizationId: string | null
+  user_id: string
+  organization_id: string | null
   prefix: string
   start: string
   enabled: boolean
   remaining: number | null
-  expiresAt: Date | null
-  rateLimitEnabled: boolean
-  rateLimitTimeWindow: number
-  rateLimitMax: number
-  requestCount: number
-  lastRequest: Date | null
-  refillInterval: number | null
-  refillAmount: number | null
-  lastRefillAt: Date | null
+  expires_at: Date | null
+  rate_limit_enabled: boolean
+  rate_limit_time_window: number
+  rate_limit_max: number
+  request_count: number
+  last_request: Date | null
+  refill_interval: number | null
+  refill_amount: number | null
+  last_refill_at: Date | null
   permissions: string | null
   metadata: string | null
-  createdAt: Date
-  updatedAt: Date
+  created_at: Date
+  updated_at: Date
 }
 
 export interface Database {
